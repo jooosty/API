@@ -29,6 +29,15 @@
         <hr />
 
         <h2>Track Visualiser</h2>
+        <label for="speed-select">Speed:</label>
+        <select id="speed-select">
+            <option value="1">1x</option>
+            <option value="2">2x</option>
+            <option value="5">5x</option>
+            <option value="10" selected>10x</option>
+            <option value="25">25x</option>
+            <option value="50">50x</option>
+        </select>
         <div id="track-container" style="width: 800px; height: 600px;"></div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -333,7 +342,6 @@
                 let currentPointIndex: number = 0;
                 let lastRealTime: number | null = null;
                 let simulatedTime: number = new Date(locationData[0].date).getTime();
-                const speedMultiplier: number = 10;
 
                 function animate(realTimestamp: number): void {
                     requestAnimationFrame(animate);
@@ -342,6 +350,7 @@
                     const realElapsed = realTimestamp - lastRealTime;
                     lastRealTime = realTimestamp;
 
+                    const speedMultiplier = Number((document.getElementById('speed-select') as HTMLSelectElement).value);
                     simulatedTime += realElapsed * speedMultiplier;
 
                     // find the point whose timestamp is closest to simulatedTime
@@ -364,7 +373,7 @@
                     renderer.render(scene, camera);
                 }
 
-                animate(0);
+                requestAnimationFrame(animate);
             }
 
             loadTrack();
