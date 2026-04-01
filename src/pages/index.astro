@@ -276,6 +276,51 @@
                 const trackLine = new THREE.Line(trackGeometry, trackMaterial);
                 scene.add(trackLine);
 
+                let zoomLevel: number = 1;
+                let isPanning: boolean = false;
+                let panStartX: number = 0;
+                let panStartY: number = 0;
+                let cameraOffsetX: number = 0;
+                let cameraOffsetY: number = 0;
+
+                function updateCamera(): void {
+                    const baseWidth = 400;
+                    const baseHeight = 300;
+                    camera.left = -baseWidth / zoomLevel + cameraOffsetX;
+                    camera.right = baseWidth / zoomLevel + cameraOffsetX;
+                    camera.top = baseHeight / zoomLevel + cameraOffsetY;
+                    camera.bottom = -baseHeight / zoomLevel + cameraOffsetY;
+                    camera.updateProjectionMatrix();
+                    renderer.render(scene, camera);
+                }
+
+                renderer.domElement.addEventListener('wheel', (wheelEvent: WheelEvent) => {
+                    wheelEvent.preventDefault();
+                    zoomLevel *= wheelEvent.deltaY < 0 ? 1.1 : 0.9;
+                    zoomLevel = Math.max(0.5, Math.min(20, zoomLevel));
+                    updateCamera();
+                });
+
+                renderer.domElement.addEventListener('mousedown', (mouseEvent: MouseEvent) => {
+                    isPanning = true;
+                    panStartX = mouseEvent.clientX;
+                    panStartY = mouseEvent.clientY;
+                });
+
+                renderer.domElement.addEventListener('mousemove', (mouseEvent: MouseEvent) => {
+                    if (!isPanning) return;
+                    const deltaX = (mouseEvent.clientX - panStartX) / zoomLevel;
+                    const deltaY = (mouseEvent.clientY - panStartY) / zoomLevel;
+                    panStartX = mouseEvent.clientX;
+                    panStartY = mouseEvent.clientY;
+                    cameraOffsetX -= deltaX;
+                    cameraOffsetY += deltaY;
+                    updateCamera();
+                });
+
+                renderer.domElement.addEventListener('mouseup', () => { isPanning = false; });
+                renderer.domElement.addEventListener('mouseleave', () => { isPanning = false; });
+
                 renderer.render(scene, camera);
             }
 
