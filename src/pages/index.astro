@@ -330,7 +330,19 @@
 
                 scene.add(dotMesh);
 
-                renderer.render(scene, camera);
+                let currentPointIndex: number = 0;
+
+                function animate(): void {
+                    requestAnimationFrame(animate);
+
+                    currentPointIndex = (currentPointIndex + 1) % trackPoints.length;
+                    const currentPoint = trackPoints[currentPointIndex];
+                    dotMesh.position.set(currentPoint.x, currentPoint.y, 1);
+
+                    renderer.render(scene, camera);
+                }
+
+                animate();
             }
 
             loadTrack();
