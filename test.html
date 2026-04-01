@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>F1 JSON Explorer</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Mono', monospace; background: #0f0f0f; color: #e0e0e0; padding: 1.5rem; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; }
+select, button {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid #333;
+  background: #1a1a1a;
+  color: #e0e0e0;
+  cursor: pointer;
+}
+select { min-width: 160px; }
+button.primary { background: #e10600; border-color: #e10600; color: #fff; font-weight: 600; }
+button.primary:disabled { opacity: 0.4; cursor: not-allowed; }
+button.copy-btn { font-size: 12px; padding: 4px 10px; }
+.endpoint-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.ep-btn {
+  font-size: 11px; padding: 4px 10px; border-radius: 3px;
+  border: 1px solid #333; background: #1a1a1a; color: #888;
+  cursor: pointer; font-family: inherit; transition: border-color 0.1s, color 0.1s;
+}
+.ep-btn.active { border-color: #e10600; color: #e10600; }
+.url-bar {
+  font-size: 12px; color: #888; background: #1a1a1a;
+  border: 1px solid #2a2a2a; border-radius: 4px;
+  padding: 6px 10px; word-break: break-all; margin-bottom: 10px;
+}
+.url-bar span { color: #e10600; }
+pre {
+  background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px;
+  padding: 14px; font-size: 12px; overflow-x: auto; white-space: pre;
+  max-height: 600px; overflow-y: auto; color: #e0e0e0; line-height: 1.6;
+}
+.status { font-size: 12px; color: #888; }
+.status.err { color: #e10600; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="row">
+    <select id="yr">
+      <option value="2025">2025</option>
+      <option value="2024">2024</option>
+      <option value="2023">2023</option>
+    </select>
+    <select id="meeting"><option value="">— Select race —</option></select>
+    <select id="session"><option value="">— Session —</option></select>
+  </div>
+
+  <div class="endpoint-row" id="eps"></div>
+  <div class="url-bar" id="url-bar">Select a session and endpoint</div>
+
+  <div class="row">
+    <button class="primary" id="fetch-btn" onclick="doFetch()" disabled>Fetch JSON</button>
+    <button class="copy-btn" onclick="copyJson()">Copy</button>
+    <span class="status" id="status"></span>
+  </div>
+
+  <pre id="output">// JSON will appear here</pre>
+</div>
+
+<script>
+const BASE = 'https://api.openf1.org/v1';
+const ENDPOINTS = [
+  { label: 'Drivers', path: '/drivers' },
+  { label: 'Results', path: '/session_result' },
+  { label: 'Laps', path: '/laps' },
+  { label: 'Stints', path: '/stints' },
+  { label: 'Pit Stops', path: '/pit' },
+  { label: 'Position', path: '/position' },
+  { label: 'Intervals', path: '/intervals' },
+  { label: 'Race Control', path: '/race_control' },
+  { label: 'Weather', path: '/weather' },
+  { label: 'Starting Grid', path: '/starting_grid' },
+  { label: 'Team Radio', path: '/team_radio' },
+  { label: 'Overtakes', path: '/overtakes' },
+  { label: 'Car Data', path: '/car_data' },
+];
+
+let sessionKey = null, meetingKey = null, activeEp = ENDPOINTS[0].path;
+
+const epsEl = document.getElementById('eps');
+ENDPOINTS.forEach(ep => {
+  const b = document.createElement('button');
+  b.className = 'ep-btn' + (ep.path === activeEp ? ' active' : '');
+  b.textContent = ep.label;
+  b.onclick = () => {
+    document.querySelectorAll('.ep-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    activeEp = ep.path;
+    updateUrl();
+  };
+  epsEl.appendChild(b);
+});
+
+function updateUrl() {
+  const el = document.getElementById('url-bar');
+  if (!sessionKey) { el.innerHTML = 'Select a session and endpoint'; return; }
+  el.innerHTML = `<span>${BASE}${activeEp}</span>?session_key=<span>${sessionKey}</span>`;
+  document.getElementById('fetch-btn').disabled = false;
+}
+
+async function loadMeetings() {
+  const yr = document.getElementById('yr').value;
+  const res = await fetch(`${BASE}/meetings?year=${yr}`);
+  const data = await res.json();
+  data.sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
+  const sel = document.getElementById('meeting');
+  sel.innerHTML = '<option value="">— Select race —</option>';
+  data.forEach(m => {
+    const o = document.createElement('option');
+    o.value = m.meeting_key;
+    o.textContent = m.meeting_name;
+    sel.appendChild(o);
+  });
+  document.getElementById('session').innerHTML = '<option value="">— Session —</option>';
+  sessionKey = null; meetingKey = null;
+  document.getElementById('fetch-btn').disabled = true;
+  updateUrl();
+}
+
+document.getElementById('yr').addEventListener('change', loadMeetings);
+
+document.getElementById('meeting').addEventListener('change', async function() {
+  meetingKey = this.value;
+  if (!meetingKey) return;
+  const res = await fetch(`${BASE}/sessions?meeting_key=${meetingKey}`);
+  const data = await res.json();
+  const sel = document.getElementById('session');
+  sel.innerHTML = '<option value="">— Session —</option>';
+  data.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.session_key;
+    o.textContent = s.session_name;
+    sel.appendChild(o);
+  });
+  sessionKey = null;
+  document.getElementById('fetch-btn').disabled = true;
+  updateUrl();
+});
+
+document.getElementById('session').addEventListener('change', function() {
+  sessionKey = this.value || null;
+  updateUrl();
+});
+
+async function doFetch() {
+  const st = document.getElementById('status');
+  const out = document.getElementById('output');
+  st.className = 'status';
+  st.textContent = 'Fetching...';
+  out.textContent = '// loading...';
+  try {
+    const url = `${BASE}${activeEp}?session_key=${sessionKey}`;
+    const t0 = Date.now();
+    const res = await fetch(url);
+    const data = await res.json();
+    const ms = Date.now() - t0;
+    out.textContent = JSON.stringify(data, null, 2);
+    st.textContent = `${Array.isArray(data) ? data.length + ' records' : 'object'} · ${ms}ms · ${(JSON.stringify(data).length / 1024).toFixed(1)}kb`;
+  } catch(e) {
+    st.className = 'status err';
+    st.textContent = e.message;
+    out.textContent = '// error: ' + e.message;
+  }
+}
+
+function copyJson() {
+  navigator.clipboard.writeText(document.getElementById('output').textContent).catch(() => {});
+}
+
+loadMeetings();
+</script>
+</body>
+</html>
