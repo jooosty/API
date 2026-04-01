@@ -331,18 +331,40 @@
                 scene.add(dotMesh);
 
                 let currentPointIndex: number = 0;
+                let lastRealTime: number | null = null;
+                let simulatedTime: number = new Date(locationData[0].date).getTime();
+                const speedMultiplier: number = 10;
 
-                function animate(): void {
+                function animate(realTimestamp: number): void {
                     requestAnimationFrame(animate);
 
-                    currentPointIndex = (currentPointIndex + 1) % trackPoints.length;
+                    if (lastRealTime === null) lastRealTime = realTimestamp;
+                    const realElapsed = realTimestamp - lastRealTime;
+                    lastRealTime = realTimestamp;
+
+                    simulatedTime += realElapsed * speedMultiplier;
+
+                    // find the point whose timestamp is closest to simulatedTime
+                    while (
+                        currentPointIndex < locationData.length - 1 &&
+                        new Date(locationData[currentPointIndex + 1].date).getTime() < simulatedTime
+                    ) {
+                        currentPointIndex++;
+                    }
+
+                    // loop back to start when we reach the end
+                    if (currentPointIndex >= locationData.length - 1) {
+                        currentPointIndex = 0;
+                        simulatedTime = new Date(locationData[0].date).getTime();
+                    }
+
                     const currentPoint = trackPoints[currentPointIndex];
                     dotMesh.position.set(currentPoint.x, currentPoint.y, 1);
 
                     renderer.render(scene, camera);
                 }
 
-                animate();
+                animate(0);
             }
 
             loadTrack();
