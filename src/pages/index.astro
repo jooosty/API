@@ -38,6 +38,7 @@
             <option value="25">25x</option>
             <option value="50">50x</option>
         </select>
+        <button id="play-pause-button">Pause</button>
         <div id="track-container" style="width: 800px; height: 600px;"></div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -246,17 +247,68 @@
 
             async function loadTrack() {
                 const sessionKey = 9165;
-                const driverNumber = 55;
                 const dateStart = '2023-09-17T13:00:00';
                 const dateEnd = '2023-09-17T13:10:00';
 
-                const locationData = await fetch(
-                    `${BASE_URL}/location?session_key=${sessionKey}&driver_number=${driverNumber}&date>=${dateStart}&date<=${dateEnd}`
-                ).then(response => response.json());
+                function delay(ms: number): Promise<void> {
+                    return new Promise(resolve => setTimeout(resolve, ms));
+                }
 
-                // find the min and max of x and y to compute the center
-                const xValues = locationData.map((point: any) => point.x);
-                const yValues = locationData.map((point: any) => point.y);
+                // loading label shown on the canvas while fetching
+                const loadingCanvas = document.createElement('canvas');
+                loadingCanvas.width = 512;
+                loadingCanvas.height = 64;
+                const loadingContext = loadingCanvas.getContext('2d') as CanvasRenderingContext2D;
+
+                const loadingTexture = new THREE.CanvasTexture(loadingCanvas);
+                const loadingMaterial = new THREE.SpriteMaterial({ map: loadingTexture });
+                const loadingSprite = new THREE.Sprite(loadingMaterial);
+                loadingSprite.scale.set(200, 25, 1);
+                loadingSprite.position.set(0, 0, 1);
+                scene.add(loadingSprite);
+
+                function setLoadingText(text: string): void {
+                    loadingContext.clearRect(0, 0, loadingCanvas.width, loadingCanvas.height);
+                    loadingContext.fillStyle = '#ffffff';
+                    loadingContext.font = 'bold 24px monospace';
+                    loadingContext.textAlign = 'center';
+                    loadingContext.fillText(text, loadingCanvas.width / 2, 40);
+                    loadingTexture.needsUpdate = true;
+                    renderer.render(scene, camera);
+                }
+
+                setLoadingText('Fetching drivers...');
+
+                // fetch all drivers in the session
+                const driversData = await fetch(
+                    `${BASE_URL}/drivers?session_key=${sessionKey}`
+                ).then(r => r.json());
+
+                // wait 1 second after fetching drivers before starting location requests
+                await delay(1000);
+
+                // fetch location data for each driver sequentially to respect rate limit
+                // 500ms between requests = 2 per second, well under the 3/sec limit
+                const allDriverLocationData: { driver: any; points: any[] }[] = [];
+                for (const driver of driversData) {
+                    setLoadingText(`Loading ${driver.name_acronym} (${allDriverLocationData.length + 1}/${driversData.length})`);
+                    const points = await fetch(
+                        `${BASE_URL}/location?session_key=${sessionKey}&driver_number=${driver.driver_number}&date>=${dateStart}&date<=${dateEnd}`
+                    ).then(r => r.json());
+                    if (points.length > 0) {
+                        allDriverLocationData.push({ driver, points });
+                    }
+                    await delay(500);
+                }
+
+                // remove loading sprite once done
+                scene.remove(loadingSprite);
+
+                // combine all points to compute a shared center and scale
+                const allPoints = allDriverLocationData.flatMap(d => d.points);
+
+                const xValues = allPoints.map((point: any) => point.x);
+                const yValues = allPoints.map((point: any) => point.y);
 
                 const minX = Math.min(...xValues);
                 const maxX = Math.max(...xValues);
@@ -266,24 +318,40 @@
                 const centerX = (minX + maxX) / 2;
                 const centerY = (minY + maxY) / 2;
 
-                // figure out how much to scale so it fits in the camera view
                 const trackWidth = (maxX - minX) * 0.1;
                 const trackHeight = (maxY - minY) * 0.1;
                 const scale = Math.min(700 / trackWidth, 500 / trackHeight) * 0.9;
 
-                // subtract the center from every point so the track is centered at 0,0
-                const trackPoints = locationData.map((point: any) => {
+                function toTrackPoint(point: any): any {
                     return new THREE.Vector3(
                         (point.x - centerX) * 0.1 * scale,
                         (point.y - centerY) * 0.1 * scale,
                         0
                     );
-                });
+                }
 
-                const trackGeometry = new THREE.BufferGeometry().setFromPoints(trackPoints);
-                const trackMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+                // draw track line from the driver with the most points
+                const mostPoints = allDriverLocationData.reduce((best, current) =>
+                    current.points.length > best.points.length ? current : best
+                );
+                const trackLinePoints = mostPoints.points.map(toTrackPoint);
+                const trackGeometry = new THREE.BufferGeometry().setFromPoints(trackLinePoints);
+                const trackMaterial = new THREE.LineBasicMaterial({ color: 0x444444 });
                 const trackLine = new THREE.Line(trackGeometry, trackMaterial);
                 scene.add(trackLine);
+
+                // create a dot and mapped points array for each driver
+                const driverDots = allDriverLocationData.map(({ driver, points }) => {
+                    const teamColor = driver.team_colour ? parseInt(driver.team_colour, 16) : 0xffffff;
+                    const dotMesh = new THREE.Mesh(
+                        new THREE.CircleGeometry(5, 32),
+                        new THREE.MeshBasicMaterial({ color: teamColor })
+                    );
+                    const mappedPoints = points.map(toTrackPoint);
+                    dotMesh.position.set(mappedPoints[0].x, mappedPoints[0].y, 1);
+                    scene.add(dotMesh);
+                    return { dotMesh, mappedPoints, rawPoints: points, index: 0 };
+                });
 
                 let zoomLevel: number = 1;
                 let isPanning: boolean = false;
@@ -330,21 +398,14 @@
                 renderer.domElement.addEventListener('mouseup', () => { isPanning = false; });
                 renderer.domElement.addEventListener('mouseleave', () => { isPanning = false; });
 
-                const dotGeometry = new THREE.CircleGeometry(5, 32);
-                const dotMaterial = new THREE.MeshBasicMaterial({ color: 0xe10600 });
-                const dotMesh = new THREE.Mesh(dotGeometry, dotMaterial);
-
-                const firstPoint = trackPoints[0];
-                dotMesh.position.set(firstPoint.x, firstPoint.y, 1);
-
-                scene.add(dotMesh);
-
-                let currentPointIndex: number = 0;
                 let lastRealTime: number | null = null;
-                let simulatedTime: number = new Date(locationData[0].date).getTime();
+                let simulatedTime: number = new Date(allDriverLocationData[0].points[0].date).getTime();
+                let isPlaying: boolean = true;
 
                 function animate(realTimestamp: number): void {
                     requestAnimationFrame(animate);
+
+                    if (!isPlaying) return;
 
                     if (lastRealTime === null) lastRealTime = realTimestamp;
                     const realElapsed = realTimestamp - lastRealTime;
@@ -353,25 +414,37 @@
                     const speedMultiplier = Number((document.getElementById('speed-select') as HTMLSelectElement).value);
                     simulatedTime += realElapsed * speedMultiplier;
 
-                    // find the point whose timestamp is closest to simulatedTime
-                    while (
-                        currentPointIndex < locationData.length - 1 &&
-                        new Date(locationData[currentPointIndex + 1].date).getTime() < simulatedTime
-                    ) {
-                        currentPointIndex++;
+                    let reachedEnd = false;
+
+                    for (const driverDot of driverDots) {
+                        while (
+                            driverDot.index < driverDot.rawPoints.length - 1 &&
+                            new Date(driverDot.rawPoints[driverDot.index + 1].date).getTime() < simulatedTime
+                        ) {
+                            driverDot.index++;
+                        }
+                        if (driverDot.index >= driverDot.rawPoints.length - 1) {
+                            reachedEnd = true;
+                        }
+                        const currentPoint = driverDot.mappedPoints[driverDot.index];
+                        driverDot.dotMesh.position.set(currentPoint.x, currentPoint.y, 1);
                     }
 
-                    // loop back to start when we reach the end
-                    if (currentPointIndex >= locationData.length - 1) {
-                        currentPointIndex = 0;
-                        simulatedTime = new Date(locationData[0].date).getTime();
+                    if (reachedEnd) {
+                        for (const driverDot of driverDots) {
+                            driverDot.index = 0;
+                        }
+                        simulatedTime = new Date(allDriverLocationData[0].points[0].date).getTime();
                     }
-
-                    const currentPoint = trackPoints[currentPointIndex];
-                    dotMesh.position.set(currentPoint.x, currentPoint.y, 1);
 
                     renderer.render(scene, camera);
                 }
+
+                document.getElementById('play-pause-button')?.addEventListener('click', () => {
+                    isPlaying = !isPlaying;
+                    lastRealTime = null;
+                    (document.getElementById('play-pause-button') as HTMLButtonElement).textContent = isPlaying ? 'Pause' : 'Play';
+                });
 
                 requestAnimationFrame(animate);
             }
