@@ -321,6 +321,15 @@
                 renderer.domElement.addEventListener('mouseup', () => { isPanning = false; });
                 renderer.domElement.addEventListener('mouseleave', () => { isPanning = false; });
 
+                const dotGeometry = new THREE.CircleGeometry(5, 32);
+                const dotMaterial = new THREE.MeshBasicMaterial({ color: 0xe10600 });
+                const dotMesh = new THREE.Mesh(dotGeometry, dotMaterial);
+
+                const firstPoint = trackPoints[0];
+                dotMesh.position.set(firstPoint.x, firstPoint.y, 1);
+
+                scene.add(dotMesh);
+
                 renderer.render(scene, camera);
             }
 
