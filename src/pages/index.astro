@@ -33,7 +33,6 @@
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
         <script>
-            declare const THREE: any;
             // ── JSON Explorer ─────────────────────────────────────────────
 
             const BASE_URL = 'https://api.openf1.org/v1';
@@ -236,7 +235,51 @@
 
             document.getElementById('track-container')?.appendChild(renderer.domElement);
 
-            renderer.render(scene, camera);
+            async function loadTrack() {
+                const sessionKey = 9165;
+                const driverNumber = 55;
+                const dateStart = '2023-09-17T13:00:00';
+                const dateEnd = '2023-09-17T13:10:00';
+
+                const locationData = await fetch(
+                    `${BASE_URL}/location?session_key=${sessionKey}&driver_number=${driverNumber}&date>=${dateStart}&date<=${dateEnd}`
+                ).then(response => response.json());
+
+                // find the min and max of x and y to compute the center
+                const xValues = locationData.map((point: any) => point.x);
+                const yValues = locationData.map((point: any) => point.y);
+
+                const minX = Math.min(...xValues);
+                const maxX = Math.max(...xValues);
+                const minY = Math.min(...yValues);
+                const maxY = Math.max(...yValues);
+
+                const centerX = (minX + maxX) / 2;
+                const centerY = (minY + maxY) / 2;
+
+                // figure out how much to scale so it fits in the camera view
+                const trackWidth = (maxX - minX) * 0.1;
+                const trackHeight = (maxY - minY) * 0.1;
+                const scale = Math.min(700 / trackWidth, 500 / trackHeight) * 0.9;
+
+                // subtract the center from every point so the track is centered at 0,0
+                const trackPoints = locationData.map((point: any) => {
+                    return new THREE.Vector3(
+                        (point.x - centerX) * 0.1 * scale,
+                        (point.y - centerY) * 0.1 * scale,
+                        0
+                    );
+                });
+
+                const trackGeometry = new THREE.BufferGeometry().setFromPoints(trackPoints);
+                const trackMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+                const trackLine = new THREE.Line(trackGeometry, trackMaterial);
+                scene.add(trackLine);
+
+                renderer.render(scene, camera);
+            }
+
+            loadTrack();
         </script>
     </body>
 </html>
