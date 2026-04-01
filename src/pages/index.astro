@@ -26,7 +26,16 @@
             <pre id="json-output">// JSON will appear here</pre>
         </div>
 
+        <hr />
+
+        <h2>Track Visualiser</h2>
+        <div id="track-container" style="width: 800px; height: 600px;"></div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
         <script>
+            declare const THREE: any;
+            // ── JSON Explorer ─────────────────────────────────────────────
+
             const BASE_URL = 'https://api.openf1.org/v1';
             const ENDPOINTS = [
                 { label: 'Drivers', path: '/drivers' },
@@ -211,6 +220,23 @@
             document.getElementById('copy-button')?.addEventListener('click', copyJson);
 
             loadMeetings();
+
+            // ── Track Visualiser ──────────────────────────────────────────
+
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a1a);
+
+            const camera = new THREE.OrthographicCamera(-400, 400, 300, -300, 0.1, 1000);
+            camera.position.set(0, 0, 100);
+            camera.lookAt(0, 0, 0);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(800, 600);
+            renderer.setPixelRatio(window.devicePixelRatio);
+
+            document.getElementById('track-container')?.appendChild(renderer.domElement);
+
+            renderer.render(scene, camera);
         </script>
     </body>
 </html>
