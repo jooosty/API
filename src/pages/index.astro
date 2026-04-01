@@ -14,6 +14,7 @@
             </select>
             <select id="meeting-select"><option value="">— Select race —</option></select>
             <select id="session-select"><option value="">— Session —</option></select>
+            <select id="driver-select"><option value="">— All drivers —</option></select>
 
             <div id="endpoint-buttons"></div>
             <div id="url-display"></div>
@@ -43,7 +44,15 @@
                 { label: 'Car Data', path: '/car_data' },
             ];
 
+            const ENDPOINTS_WITHOUT_DRIVER_FILTER = [
+                '/session_result',
+                '/race_control',
+                '/weather',
+                '/starting_grid',
+            ];
+
             let selectedSessionKey: string | null = null;
+            let selectedDriverNumber: string | null = null;
             let activeEndpointPath: string = ENDPOINTS[0].path;
 
             const endpointButtonsContainer = document.getElementById('endpoint-buttons');
@@ -57,10 +66,43 @@
                 endpointButtonsContainer?.appendChild(button);
             });
 
+            function buildRequestUrl() {
+                let url = `${BASE_URL}${activeEndpointPath}?session_key=${selectedSessionKey}`;
+                const driverFilterAllowed = !ENDPOINTS_WITHOUT_DRIVER_FILTER.includes(activeEndpointPath);
+                if (selectedDriverNumber && driverFilterAllowed) {
+                    if (activeEndpointPath === '/overtakes') {
+                        url += `&overtaking_driver_number=${selectedDriverNumber}&overtaken_driver_number=${selectedDriverNumber}`;
+                    } else {
+                        url += `&driver_number=${selectedDriverNumber}`;
+                    }
+                }
+                return url;
+            }
+
+            async function fetchAndMergeOvertakes(): Promise<any[]> {
+                const overtakingUrl = `${BASE_URL}/overtakes?session_key=${selectedSessionKey}&overtaking_driver_number=${selectedDriverNumber}`;
+                const overtakenUrl = `${BASE_URL}/overtakes?session_key=${selectedSessionKey}&overtaken_driver_number=${selectedDriverNumber}`;
+
+                const [overtakingResults, overtakenResults] = await Promise.all([
+                    fetch(overtakingUrl).then(response => response.json()),
+                    fetch(overtakenUrl).then(response => response.json()),
+                ]);
+
+                const mergedResults = [...overtakingResults, ...overtakenResults];
+                mergedResults.sort((entryA: any, entryB: any) => new Date(entryA.date).getTime() - new Date(entryB.date).getTime());
+                return mergedResults;
+            }
+
             function updateUrlDisplay() {
                 const urlDisplay = document.getElementById('url-display');
                 if (!selectedSessionKey || !urlDisplay) return;
-                urlDisplay.textContent = `${BASE_URL}${activeEndpointPath}?session_key=${selectedSessionKey}`;
+
+                if (activeEndpointPath === '/overtakes' && selectedDriverNumber) {
+                    urlDisplay.textContent = `${BASE_URL}/overtakes?session_key=${selectedSessionKey}&overtaking_driver_number=${selectedDriverNumber} + overtaken_driver_number=${selectedDriverNumber} (merged)`;
+                } else {
+                    urlDisplay.textContent = buildRequestUrl();
+                }
+
                 (document.getElementById('fetch-button') as HTMLButtonElement).disabled = false;
             }
 
@@ -77,7 +119,9 @@
                     meetingSelect.appendChild(option);
                 });
                 (document.getElementById('session-select') as HTMLSelectElement).innerHTML = '<option value="">— Session —</option>';
+                (document.getElementById('driver-select') as HTMLSelectElement).innerHTML = '<option value="">— All drivers —</option>';
                 selectedSessionKey = null;
+                selectedDriverNumber = null;
                 (document.getElementById('fetch-button') as HTMLButtonElement).disabled = true;
                 updateUrlDisplay();
             }
@@ -95,8 +139,23 @@
                     sessionSelect.appendChild(option);
                 });
                 selectedSessionKey = null;
+                selectedDriverNumber = null;
+                (document.getElementById('driver-select') as HTMLSelectElement).innerHTML = '<option value="">— All drivers —</option>';
                 (document.getElementById('fetch-button') as HTMLButtonElement).disabled = true;
                 updateUrlDisplay();
+            }
+
+            async function loadDrivers(sessionKey: string) {
+                const driversData = await fetch(`${BASE_URL}/drivers?session_key=${sessionKey}`).then(response => response.json());
+                driversData.sort((driverA: any, driverB: any) => driverA.driver_number - driverB.driver_number);
+                const driverSelect = document.getElementById('driver-select') as HTMLSelectElement;
+                driverSelect.innerHTML = '<option value="">— All drivers —</option>';
+                driversData.forEach((driver: any) => {
+                    const option = document.createElement('option');
+                    option.value = driver.driver_number;
+                    option.textContent = `${driver.name_acronym} — #${driver.driver_number} — ${driver.team_name}`;
+                    driverSelect.appendChild(option);
+                });
             }
 
             async function fetchJson() {
@@ -107,7 +166,14 @@
                 jsonOutput.textContent = '// loading...';
                 try {
                     const startTime = Date.now();
-                    const responseData = await fetch(`${BASE_URL}${activeEndpointPath}?session_key=${selectedSessionKey}`).then(response => response.json());
+                    let responseData: any;
+
+                    if (activeEndpointPath === '/overtakes' && selectedDriverNumber) {
+                        responseData = await fetchAndMergeOvertakes();
+                    } else {
+                        responseData = await fetch(buildRequestUrl()).then(response => response.json());
+                    }
+
                     jsonOutput.textContent = JSON.stringify(responseData, null, 2);
                     statusMessage.textContent = `${Array.isArray(responseData) ? responseData.length + ' records' : 'object'} · ${Date.now() - startTime}ms`;
                 } catch (error: any) {
@@ -123,9 +189,21 @@
 
             document.getElementById('year-select')?.addEventListener('change', loadMeetings);
             document.getElementById('meeting-select')?.addEventListener('change', loadSessions);
-            document.getElementById('session-select')?.addEventListener('change', function () {
+
+            document.getElementById('session-select')?.addEventListener('change', async function () {
                 const sessionSelect = this as HTMLSelectElement;
                 selectedSessionKey = sessionSelect.value || null;
+                selectedDriverNumber = null;
+                (document.getElementById('driver-select') as HTMLSelectElement).innerHTML = '<option value="">— All drivers —</option>';
+                if (selectedSessionKey) {
+                    await loadDrivers(selectedSessionKey);
+                }
+                updateUrlDisplay();
+            });
+
+            document.getElementById('driver-select')?.addEventListener('change', function () {
+                const driverSelect = this as HTMLSelectElement;
+                selectedDriverNumber = driverSelect.value || null;
                 updateUrlDisplay();
             });
 
