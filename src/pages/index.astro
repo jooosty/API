@@ -247,9 +247,11 @@
             document.getElementById('track-container')?.appendChild(renderer.domElement);
 
             async function loadTrack() {
-                const sessionKey = 9165;
-                const dateStart = '2023-09-17T13:00:00';
-                const dateEnd = '2023-09-17T13:10:00';
+                const sessionKey = selectedSessionKey;
+                if (!sessionKey) {
+                    alert('Please select a session first.');
+                    return;
+                }
 
                 function delay(ms: number): Promise<void> {
                     return new Promise(resolve => setTimeout(resolve, ms));
@@ -277,6 +279,24 @@
                     loadingTexture.needsUpdate = true;
                     renderer.render(scene, camera);
                 }
+
+                setLoadingText('Fetching session...');
+
+                // clear any previously loaded track and dots
+                scene.clear();
+                scene.background = new THREE.Color(0x1a1a1a);
+                scene.add(loadingSprite);
+                renderer.render(scene, camera);
+
+                // fetch session date range
+                const sessionData = await fetch(
+                    `${BASE_URL}/sessions?session_key=${sessionKey}`
+                ).then(r => r.json());
+
+                const dateStart = new Date(sessionData[0].date_start).toISOString();
+                const dateEnd = new Date(sessionData[0].date_end).toISOString();
+
+                await delay(500);
 
                 setLoadingText('Fetching drivers...');
 
@@ -308,13 +328,10 @@
                 // combine all points to compute a shared center and scale
                 const allPoints = allDriverLocationData.flatMap(d => d.points);
 
-                const xValues = allPoints.map((point: any) => point.x);
-                const yValues = allPoints.map((point: any) => point.y);
-
-                const minX = Math.min(...xValues);
-                const maxX = Math.max(...xValues);
-                const minY = Math.min(...yValues);
-                const maxY = Math.max(...yValues);
+                const minX = allPoints.reduce((min: number, p: any) => p.x < min ? p.x : min, Infinity);
+                const maxX = allPoints.reduce((max: number, p: any) => p.x > max ? p.x : max, -Infinity);
+                const minY = allPoints.reduce((min: number, p: any) => p.y < min ? p.y : min, Infinity);
+                const maxY = allPoints.reduce((max: number, p: any) => p.y > max ? p.y : max, -Infinity);
 
                 const centerX = (minX + maxX) / 2;
                 const centerY = (minY + maxY) / 2;
