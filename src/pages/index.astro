@@ -451,6 +451,24 @@
                     return `${minutes}:${String(seconds).padStart(2, '0')}`;
                 }
 
+                const STATIONARY_HIDE_MS = 2 * 60 * 1000; // 2 minutes
+                const STATIONARY_MOVE_THRESHOLD = 5; // raw coordinate units — below this counts as "not moved"
+
+                // Returns true if the driver has not meaningfully moved in the last STATIONARY_HIDE_MS
+                function isDriverStationary(driverDot: any, currentIndex: number): boolean {
+                    const currentRaw = driverDot.rawPoints[currentIndex];
+                    const cutoffTime = new Date(currentRaw.date).getTime() - STATIONARY_HIDE_MS;
+                    // Walk backwards to find the point at the cutoff time
+                    let lookbackIndex = currentIndex;
+                    while (lookbackIndex > 0 && new Date(driverDot.rawPoints[lookbackIndex].date).getTime() > cutoffTime) {
+                        lookbackIndex--;
+                    }
+                    const pastRaw = driverDot.rawPoints[lookbackIndex];
+                    const dx = currentRaw.x - pastRaw.x;
+                    const dy = currentRaw.y - pastRaw.y;
+                    return Math.sqrt(dx * dx + dy * dy) < STATIONARY_MOVE_THRESHOLD;
+                }
+
                 function updateAllDriversToTime(targetTime: number): void {
                     for (const driverDot of driverDots) {
                         // reset index if we scrubbed backwards
@@ -465,6 +483,7 @@
                         }
                         const currentPoint = driverDot.mappedPoints[driverDot.index];
                         driverDot.dotMesh.position.set(currentPoint.x, currentPoint.y, 1);
+                        driverDot.dotMesh.visible = !isDriverStationary(driverDot, driverDot.index);
                     }
                     const elapsed = targetTime - earliestTime;
                     timeDisplay.textContent = formatTime(elapsed);
@@ -515,6 +534,7 @@
                         }
                         const currentPoint = driverDot.mappedPoints[driverDot.index];
                         driverDot.dotMesh.position.set(currentPoint.x, currentPoint.y, 1);
+                        driverDot.dotMesh.visible = !isDriverStationary(driverDot, driverDot.index);
                     }
 
                     if (reachedEnd) {
