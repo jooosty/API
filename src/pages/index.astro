@@ -41,6 +41,11 @@
         </select>
         <button id="play-pause-button" disabled>Pause</button>
         <div id="track-container" style="width: 800px; height: 600px;"></div>
+        <div style="width: 800px; display: flex; align-items: center; gap: 10px; margin-top: 6px;">
+            <span id="time-display" style="font-family: monospace; font-size: 13px; min-width: 50px;">0:00</span>
+            <input type="range" id="timeline-scrubber" min="0" max="1000" value="0" disabled style="flex: 1;" />
+            <span id="time-total" style="font-family: monospace; font-size: 13px; min-width: 50px;"></span>
+        </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
         <script>
@@ -420,13 +425,74 @@
                 const earliestTime: number = Math.min(
                     ...allDriverLocationData.map(d => new Date(d.points[0].date).getTime())
                 );
+                const latestTime: number = Math.max(
+                    ...allDriverLocationData.map(d => new Date(d.points[d.points.length - 1].date).getTime())
+                );
+                const totalDuration: number = latestTime - earliestTime;
                 let simulatedTime: number = earliestTime;
                 let isPlaying: boolean = true;
+                let isScrubbing: boolean = false;
+
+                const timelineScrubber = document.getElementById('timeline-scrubber') as HTMLInputElement;
+                const timeDisplay = document.getElementById('time-display') as HTMLElement;
+                const timeTotal = document.getElementById('time-total') as HTMLElement;
+
+                timelineScrubber.disabled = false;
+                timeTotal.textContent = formatTime(totalDuration);
+
+                function formatTime(ms: number): string {
+                    const totalSeconds = Math.floor(ms / 1000);
+                    const hours = Math.floor(totalSeconds / 3600);
+                    const minutes = Math.floor((totalSeconds % 3600) / 60);
+                    const seconds = totalSeconds % 60;
+                    if (hours > 0) {
+                        return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                    }
+                    return `${minutes}:${String(seconds).padStart(2, '0')}`;
+                }
+
+                function updateAllDriversToTime(targetTime: number): void {
+                    for (const driverDot of driverDots) {
+                        // reset index if we scrubbed backwards
+                        if (new Date(driverDot.rawPoints[driverDot.index].date).getTime() > targetTime) {
+                            driverDot.index = 0;
+                        }
+                        while (
+                            driverDot.index < driverDot.rawPoints.length - 1 &&
+                            new Date(driverDot.rawPoints[driverDot.index + 1].date).getTime() < targetTime
+                        ) {
+                            driverDot.index++;
+                        }
+                        const currentPoint = driverDot.mappedPoints[driverDot.index];
+                        driverDot.dotMesh.position.set(currentPoint.x, currentPoint.y, 1);
+                    }
+                    const elapsed = targetTime - earliestTime;
+                    timeDisplay.textContent = formatTime(elapsed);
+                    timelineScrubber.value = String(Math.round((elapsed / totalDuration) * 1000));
+                    renderer.render(scene, camera);
+                }
+
+                timelineScrubber.addEventListener('mousedown', () => {
+                    isScrubbing = true;
+                    isPlaying = false;
+                    lastRealTime = null;
+                    (document.getElementById('play-pause-button') as HTMLButtonElement).textContent = 'Play';
+                });
+
+                timelineScrubber.addEventListener('input', () => {
+                    const fraction = Number(timelineScrubber.value) / 1000;
+                    simulatedTime = earliestTime + fraction * totalDuration;
+                    updateAllDriversToTime(simulatedTime);
+                });
+
+                timelineScrubber.addEventListener('mouseup', () => {
+                    isScrubbing = false;
+                });
 
                 function animate(realTimestamp: number): void {
                     requestAnimationFrame(animate);
 
-                    if (!isPlaying) return;
+                    if (!isPlaying || isScrubbing) return;
 
                     if (lastRealTime === null) lastRealTime = realTimestamp;
                     const realElapsed = realTimestamp - lastRealTime;
@@ -458,6 +524,10 @@
                         simulatedTime = earliestTime;
                     }
 
+                    const elapsed = simulatedTime - earliestTime;
+                    timeDisplay.textContent = formatTime(elapsed);
+                    timelineScrubber.value = String(Math.round((elapsed / totalDuration) * 1000));
+
                     renderer.render(scene, camera);
                 }
 
@@ -478,6 +548,7 @@
                 loadButton.textContent = 'Reload';
                 loadButton.disabled = false;
                 (document.getElementById('play-pause-button') as HTMLButtonElement).disabled = false;
+                (document.getElementById('timeline-scrubber') as HTMLInputElement).disabled = false;
             });
         </script>
     </body>
