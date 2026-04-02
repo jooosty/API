@@ -29,6 +29,7 @@
         <hr />
 
         <h2>Track Visualiser</h2>
+        <button id="load-track-button">Load Track</button>
         <label for="speed-select">Speed:</label>
         <select id="speed-select">
             <option value="1">1x</option>
@@ -38,7 +39,7 @@
             <option value="25">25x</option>
             <option value="50">50x</option>
         </select>
-        <button id="play-pause-button">Pause</button>
+        <button id="play-pause-button" disabled>Pause</button>
         <div id="track-container" style="width: 800px; height: 600px;"></div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -263,16 +264,16 @@
                 const loadingTexture = new THREE.CanvasTexture(loadingCanvas);
                 const loadingMaterial = new THREE.SpriteMaterial({ map: loadingTexture });
                 const loadingSprite = new THREE.Sprite(loadingMaterial);
-                loadingSprite.scale.set(200, 25, 1);
+                loadingSprite.scale.set(400, 50, 1);
                 loadingSprite.position.set(0, 0, 1);
                 scene.add(loadingSprite);
 
                 function setLoadingText(text: string): void {
                     loadingContext.clearRect(0, 0, loadingCanvas.width, loadingCanvas.height);
                     loadingContext.fillStyle = '#ffffff';
-                    loadingContext.font = 'bold 24px monospace';
+                    loadingContext.font = 'bold 48px monospace';
                     loadingContext.textAlign = 'center';
-                    loadingContext.fillText(text, loadingCanvas.width / 2, 40);
+                    loadingContext.fillText(text, loadingCanvas.width / 2, 52);
                     loadingTexture.needsUpdate = true;
                     renderer.render(scene, camera);
                 }
@@ -399,7 +400,10 @@
                 renderer.domElement.addEventListener('mouseleave', () => { isPanning = false; });
 
                 let lastRealTime: number | null = null;
-                let simulatedTime: number = new Date(allDriverLocationData[0].points[0].date).getTime();
+                const earliestTime: number = Math.min(
+                    ...allDriverLocationData.map(d => new Date(d.points[0].date).getTime())
+                );
+                let simulatedTime: number = earliestTime;
                 let isPlaying: boolean = true;
 
                 function animate(realTimestamp: number): void {
@@ -434,7 +438,7 @@
                         for (const driverDot of driverDots) {
                             driverDot.index = 0;
                         }
-                        simulatedTime = new Date(allDriverLocationData[0].points[0].date).getTime();
+                        simulatedTime = earliestTime;
                     }
 
                     renderer.render(scene, camera);
@@ -449,7 +453,15 @@
                 requestAnimationFrame(animate);
             }
 
-            loadTrack();
+            document.getElementById('load-track-button')?.addEventListener('click', async () => {
+                const loadButton = document.getElementById('load-track-button') as HTMLButtonElement;
+                loadButton.disabled = true;
+                loadButton.textContent = 'Loading...';
+                await loadTrack();
+                loadButton.textContent = 'Reload';
+                loadButton.disabled = false;
+                (document.getElementById('play-pause-button') as HTMLButtonElement).disabled = false;
+            });
         </script>
     </body>
 </html>
