@@ -29,22 +29,34 @@
         <hr />
 
         <h2>Track Visualiser</h2>
-        <button id="load-track-button">Load Track</button>
-        <label for="speed-select">Speed:</label>
-        <select id="speed-select">
-            <option value="1">1x</option>
-            <option value="2">2x</option>
-            <option value="5">5x</option>
-            <option value="10" selected>10x</option>
-            <option value="25">25x</option>
-            <option value="50">50x</option>
-        </select>
-        <button id="play-pause-button" disabled>Pause</button>
-        <div id="track-container" style="width: 800px; height: 600px;"></div>
-        <div style="width: 800px; display: flex; align-items: center; gap: 10px; margin-top: 6px;">
-            <span id="time-display" style="font-family: monospace; font-size: 13px; min-width: 50px;">0:00</span>
-            <input type="range" id="timeline-scrubber" min="0" max="1000" value="0" disabled style="flex: 1;" />
-            <span id="time-total" style="font-family: monospace; font-size: 13px; min-width: 50px;"></span>
+        <div style="margin-bottom: 6px;">
+            <button id="load-track-button">Load Track</button>
+            <label for="speed-select">Speed:</label>
+            <select id="speed-select">
+                <option value="1">1x</option>
+                <option value="2">2x</option>
+                <option value="5">5x</option>
+                <option value="10" selected>10x</option>
+                <option value="25">25x</option>
+                <option value="50">50x</option>
+            </select>
+            <button id="play-pause-button" disabled>Pause</button>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div>
+                <div id="track-container" style="width: 800px; height: 600px;"></div>
+                <div style="width: 800px; display: flex; align-items: center; gap: 10px; margin-top: 6px;">
+                    <span id="time-display" style="font-family: monospace; font-size: 13px; min-width: 50px;">0:00</span>
+                    <input type="range" id="timeline-scrubber" min="0" max="1000" value="0" disabled style="flex: 1;" />
+                    <span id="time-total" style="font-family: monospace; font-size: 13px; min-width: 50px;"></span>
+                </div>
+            </div>
+            <div id="interval-tower" style="background: #111; color: #fff; width: 220px; min-height: 600px; font-family: monospace; font-size: 13px; padding: 8px 0; flex-shrink: 0;">
+                <div style="text-align: center; font-size: 11px; color: #888; padding: 4px 8px 8px; letter-spacing: 0.08em; text-transform: uppercase; border-bottom: 1px solid #333; margin-bottom: 4px;">Intervals</div>
+                <div id="interval-rows" style="padding: 0 4px;">
+                    <div style="color: #555; text-align: center; padding: 20px 0; font-size: 11px;">Load track to show</div>
+                </div>
+            </div>
         </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -310,6 +322,31 @@
                     `${BASE_URL}/drivers?session_key=${sessionKey}`
                 ).then(r => r.json());
 
+                // fetch interval and position data for the tower
+                setLoadingText('Fetching intervals...');
+                setLoadingText('Fetching intervals...');
+                const allIntervalData: any[] = await fetch(`${BASE_URL}/intervals?session_key=${sessionKey}`).then(r => r.json());
+                await delay(400);
+                setLoadingText('Fetching positions...');
+                const allPositionData: any[] = await fetch(`${BASE_URL}/position?session_key=${sessionKey}`).then(r => r.json());
+                await delay(400);
+                setLoadingText('Fetching results...');
+                const sessionResultRaw: any = await fetch(`${BASE_URL}/session_result?session_key=${sessionKey}`).then(r => r.json());
+                const sessionResultData: any[] = Array.isArray(sessionResultRaw) ? sessionResultRaw : [];
+                await delay(400);
+                // build set of DNF driver numbers from session result
+                const dnfDrivers: Set<number> = new Set(
+                    sessionResultData.filter((r: any) => r.dnf || r.dns || r.dsq).map((r: any) => r.driver_number)
+                );
+                // build a driver acronym/colour lookup from driversData
+                const driverInfoMap: Record<number, { acronym: string; colour: string }> = {};
+                driversData.forEach((d: any) => {
+                    driverInfoMap[d.driver_number] = {
+                        acronym: d.name_acronym || ('#' + d.driver_number),
+                        colour: d.team_colour ? '#' + d.team_colour : '#ffffff',
+                    };
+                });
+
                 // wait 1 second after fetching drivers before starting location requests
                 await delay(1000);
 
@@ -451,6 +488,139 @@
                     return `${minutes}:${String(seconds).padStart(2, '0')}`;
                 }
 
+                // ── Interval Tower ────────────────────────────────────────
+                function updateIntervalTower(currentSimTime: number): void {
+                    const intervalRows = document.getElementById('interval-rows');
+                    if (!intervalRows || allIntervalData.length === 0) return;
+
+                    // get latest interval entry per driver at or before currentSimTime
+                    const latestInterval: Record<number, any> = {};
+                    for (const entry of allIntervalData) {
+                        const t = new Date(entry.date).getTime();
+                        if (t > currentSimTime) continue;
+                        const dn = entry.driver_number;
+                        if (!latestInterval[dn] || t > new Date(latestInterval[dn].date).getTime()) {
+                            latestInterval[dn] = entry;
+                        }
+                    }
+
+                    // get latest position entry per driver at or before currentSimTime
+                    const latestPosition: Record<number, any> = {};
+                    for (const entry of allPositionData) {
+                        const t = new Date(entry.date).getTime();
+                        if (t > currentSimTime) continue;
+                        const dn = entry.driver_number;
+                        if (!latestPosition[dn] || t > new Date(latestPosition[dn].date).getTime()) {
+                            latestPosition[dn] = entry;
+                        }
+                    }
+
+                    const driverNums = Object.keys(latestInterval).map(Number);
+                    if (driverNums.length === 0) return;
+
+                    // sort by official position from position data, fall back to gap_to_leader
+                    driverNums.sort((a, b) => {
+                        const posA = latestPosition[a]?.position ?? 999;
+                        const posB = latestPosition[b]?.position ?? 999;
+                        if (posA !== posB) return posA - posB;
+                        return (latestInterval[a]?.gap_to_leader ?? Infinity) - (latestInterval[b]?.gap_to_leader ?? Infinity);
+                    });
+
+                    // figure out lap count per driver from position data to detect lapped cars
+                    // gap_to_leader > 120s almost certainly means lapped — use a lap-boundary heuristic
+                    // We derive laps down from the leader's gap relative to a typical lap time estimate
+                    // Simpler: if gap_to_leader for driver at pos N is MORE than gap_to_leader at pos N-1
+                    // by more than ~60s, treat the difference as a lap marker
+                    const leaderDn = driverNums[0];
+                    const leaderGap = latestInterval[leaderDn]?.gap_to_leader ?? 0;
+
+                    intervalRows.innerHTML = '';
+                    driverNums.forEach((dn, i) => {
+                        const intervalEntry = latestInterval[dn];
+                        const info = driverInfoMap[dn] || { acronym: '#' + dn, colour: '#fff' };
+                        const isLeader = i === 0;
+
+                        const gapRaw = intervalEntry?.gap_to_leader;
+                        const ivlRaw = intervalEntry?.interval;
+                        const isLapped = typeof gapRaw === 'string' || typeof ivlRaw === 'string';
+
+
+
+                        // detect retirement: DNF from session result, or interval data
+                        // went stale (last update > 3 minutes behind current sim time)
+                        const isRetired = dnfDrivers.has(dn) && (() => {
+                            // only show RET once their data has actually stopped — i.e. their
+                            // last interval timestamp is more than 3 min behind sim time
+                            if (!intervalEntry) return true;
+                            const lastUpdate = new Date(intervalEntry.date).getTime();
+                            return (currentSimTime - lastUpdate) > 3 * 60 * 1000;
+                        })();
+
+                        // format interval (gap to car ahead)
+                        let intervalText: string;
+                        if (isLeader) {
+                            intervalText = 'LEADER';
+                        } else if (isRetired) {
+                            intervalText = 'RET';
+                        } else if (typeof ivlRaw === 'string') {
+                            intervalText = ivlRaw;
+                        } else if (typeof ivlRaw === 'number') {
+                            intervalText = '+' + ivlRaw.toFixed(3);
+                        } else {
+                            intervalText = '—';
+                        }
+
+                        // format gap to leader
+                        let gapText: string;
+                        if (isLeader) {
+                            gapText = '';
+                        } else if (isRetired) {
+                            gapText = '';
+                        } else if (typeof gapRaw === 'string') {
+                            gapText = gapRaw;
+                        } else if (typeof gapRaw === 'number') {
+                            gapText = '+' + gapRaw.toFixed(3);
+                        } else {
+                            gapText = '—';
+                        }
+
+                        const rowEl = document.createElement('div');
+                        rowEl.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 6px;border-bottom:1px solid #1e1e1e;';
+
+                        const posEl = document.createElement('span');
+                        posEl.style.cssText = 'color:#666;font-size:11px;min-width:16px;text-align:right;';
+                        posEl.textContent = String(i + 1);
+
+                        const dot = document.createElement('span');
+                        dot.style.cssText = `display:inline-block;width:7px;height:7px;border-radius:50%;background:${info.colour};flex-shrink:0;`;
+
+                        const acronym = document.createElement('span');
+                        acronym.style.cssText = 'font-weight:bold;font-size:12px;min-width:34px;letter-spacing:0.04em;';
+                        acronym.textContent = info.acronym;
+
+                        const rightCol = document.createElement('div');
+                        rightCol.style.cssText = 'margin-left:auto;text-align:right;display:flex;flex-direction:column;gap:1px;';
+
+                        const intervalEl = document.createElement('span');
+                        
+                        intervalEl.style.cssText = `font-size:11px;color:${isLeader ? '#f0c040' : isRetired ? '#666' : '#ccc'};`;
+                        intervalEl.textContent = intervalText;
+
+                        const gapEl = document.createElement('span');
+                        gapEl.style.cssText = `font-size:10px;color:#555;`;
+                        gapEl.textContent = gapText;
+
+                        rightCol.appendChild(intervalEl);
+                        if (!isLeader) rightCol.appendChild(gapEl);
+
+                        rowEl.appendChild(posEl);
+                        rowEl.appendChild(dot);
+                        rowEl.appendChild(acronym);
+                        rowEl.appendChild(rightCol);
+                        intervalRows.appendChild(rowEl);
+                    });
+                }
+
                 const STATIONARY_HIDE_MS = 2 * 60 * 1000; // 2 minutes
                 const STATIONARY_MOVE_THRESHOLD = 5; // raw coordinate units — below this counts as "not moved"
 
@@ -488,6 +658,7 @@
                     const elapsed = targetTime - earliestTime;
                     timeDisplay.textContent = formatTime(elapsed);
                     timelineScrubber.value = String(Math.round((elapsed / totalDuration) * 1000));
+                    updateIntervalTower(targetTime);
                     renderer.render(scene, camera);
                 }
 
@@ -548,8 +719,14 @@
                     timeDisplay.textContent = formatTime(elapsed);
                     timelineScrubber.value = String(Math.round((elapsed / totalDuration) * 1000));
 
+                    if (!animate.lastTowerUpdate || realTimestamp - animate.lastTowerUpdate > 500) {
+                        updateIntervalTower(simulatedTime);
+                        animate.lastTowerUpdate = realTimestamp;
+                    }
+
                     renderer.render(scene, camera);
                 }
+                (animate as any).lastTowerUpdate = 0;
 
                 document.getElementById('play-pause-button')?.addEventListener('click', () => {
                     isPlaying = !isPlaying;
