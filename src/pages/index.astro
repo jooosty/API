@@ -400,7 +400,7 @@
                 for (const driver of driversData) {
                     setLoadingText(`Loading ${driver.name_acronym} (${allDriverLocationData.length + 1}/${driversData.length})`);
                     const points = await fetch(
-                        `${BASE_URL}/location?session_key=${sessionKey}&driver_number=${driver.driver_number}`
+                        `${BASE_URL}/location?session_key=${sessionKey}&driver_number=${driver.driver_number}&date>=${new Date(sessionData[0].date_start).toISOString()}`
                     ).then(r => r.json());
                     if (points.length > 0) {
                         allDriverLocationData.push({ driver, points });
