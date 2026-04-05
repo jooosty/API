@@ -52,7 +52,8 @@
                 </div>
             </div>
             <div id="interval-tower" style="background: #111; color: #fff; width: 220px; min-height: 600px; font-family: monospace; font-size: 13px; padding: 8px 0; flex-shrink: 0;">
-                <div style="text-align: center; font-size: 11px; color: #888; padding: 4px 8px 8px; letter-spacing: 0.08em; text-transform: uppercase; border-bottom: 1px solid #333; margin-bottom: 4px;">Intervals</div>
+                <div style="text-align: center; font-size: 11px; color: #888; padding: 4px 8px 4px; letter-spacing: 0.08em; text-transform: uppercase;">Intervals</div>
+                <div id="phase-indicator" style="text-align: center; font-size: 13px; font-weight: bold; padding: 4px 8px 8px; border-bottom: 1px solid #333; margin-bottom: 4px; letter-spacing: 0.1em;"></div>
                 <div id="interval-rows" style="padding: 0 4px;">
                     <div style="color: #555; text-align: center; padding: 20px 0; font-size: 11px;">Load track to show</div>
                 </div>
@@ -310,8 +311,6 @@
                     `${BASE_URL}/sessions?session_key=${sessionKey}`
                 ).then(r => r.json());
 
-                const dateStart = new Date(sessionData[0].date_start).toISOString();
-                const dateEnd = new Date(sessionData[0].date_end).toISOString();
 
                 await delay(500);
 
@@ -322,22 +321,67 @@
                     `${BASE_URL}/drivers?session_key=${sessionKey}`
                 ).then(r => r.json());
 
-                // fetch interval and position data for the tower
-                setLoadingText('Fetching intervals...');
-                setLoadingText('Fetching intervals...');
-                const allIntervalData: any[] = await fetch(`${BASE_URL}/intervals?session_key=${sessionKey}`).then(r => r.json());
-                await delay(400);
-                setLoadingText('Fetching positions...');
-                const allPositionData: any[] = await fetch(`${BASE_URL}/position?session_key=${sessionKey}`).then(r => r.json());
-                await delay(400);
-                setLoadingText('Fetching results...');
-                const sessionResultRaw: any = await fetch(`${BASE_URL}/session_result?session_key=${sessionKey}`).then(r => r.json());
-                const sessionResultData: any[] = Array.isArray(sessionResultRaw) ? sessionResultRaw : [];
-                await delay(400);
-                // build set of DNF driver numbers from session result
-                const dnfDrivers: Set<number> = new Set(
-                    sessionResultData.filter((r: any) => r.dnf || r.dns || r.dsq).map((r: any) => r.driver_number)
-                );
+                // detect session type to decide what tower data to fetch
+                const sessionType: string = (sessionData[0].session_type || '').toLowerCase();
+                const isQualifying: boolean = sessionType.includes('qualifying');
+
+                // fetch tower data depending on session type
+                let allIntervalData: any[] = [];
+                let allPositionData: any[] = [];
+                let allLapData: any[] = [];
+                let qualPhaseBoundaries: number[] = [];
+                const dnfDrivers: Set<number> = new Set();
+
+                if (isQualifying) {
+                    setLoadingText('Fetching lap times...');
+                    const lapRaw = await fetch(`${BASE_URL}/laps?session_key=${sessionKey}`).then(r => r.json());
+                    allLapData = Array.isArray(lapRaw) ? lapRaw : [];
+                    await delay(400);
+
+                    // Use race control events to detect Q phase boundaries.
+                    // Events with qualifying_phase set tell us exactly when each phase is active.
+                    setLoadingText('Fetching race control...');
+                    const rcRaw = await fetch(`${BASE_URL}/race_control?session_key=${sessionKey}`).then(r => r.json());
+                    const rcData: any[] = Array.isArray(rcRaw) ? rcRaw : [];
+                    await delay(400);
+
+                    // Find the start time of each qualifying phase from race control events
+                    // qualifying_phase is 1, 2, or 3 — find first event per phase
+                    const phaseStartTimes: Record<number, number> = {};
+                    for (const event of rcData) {
+                        if (!event.qualifying_phase || !event.date) continue;
+                        const phase = Number(event.qualifying_phase);
+                        const t = new Date(event.date).getTime();
+                        if (!phaseStartTimes[phase] || t < phaseStartTimes[phase]) {
+                            phaseStartTimes[phase] = t;
+                        }
+                    }
+
+                    // Boundary is exactly the start of the next phase
+                    qualPhaseBoundaries = [];
+                    for (let p = 1; p <= 2; p++) {
+                        const nextPhaseStart = phaseStartTimes[p + 1];
+                        if (nextPhaseStart) {
+                            qualPhaseBoundaries.push(nextPhaseStart);
+                        }
+                    }
+
+                    console.log('[QUALI INIT] phase starts:', phaseStartTimes, '| boundaries:', qualPhaseBoundaries.map(b => new Date(b).toISOString()));
+                } else {
+                    setLoadingText('Fetching intervals...');
+                    const ivRaw = await fetch(`${BASE_URL}/intervals?session_key=${sessionKey}`).then(r => r.json());
+                    allIntervalData = Array.isArray(ivRaw) ? ivRaw : [];
+                    await delay(400);
+                    setLoadingText('Fetching positions...');
+                    const posRaw = await fetch(`${BASE_URL}/position?session_key=${sessionKey}`).then(r => r.json());
+                    allPositionData = Array.isArray(posRaw) ? posRaw : [];
+                    await delay(400);
+                    setLoadingText('Fetching results...');
+                    const sessionResultRaw: any = await fetch(`${BASE_URL}/session_result?session_key=${sessionKey}`).then(r => r.json());
+                    const sessionResultData: any[] = Array.isArray(sessionResultRaw) ? sessionResultRaw : [];
+                    await delay(400);
+                    sessionResultData.filter((r: any) => r.dnf || r.dns || r.dsq).forEach((r: any) => dnfDrivers.add(r.driver_number));
+                }
                 // build a driver acronym/colour lookup from driversData
                 const driverInfoMap: Record<number, { acronym: string; colour: string }> = {};
                 driversData.forEach((d: any) => {
@@ -356,7 +400,7 @@
                 for (const driver of driversData) {
                     setLoadingText(`Loading ${driver.name_acronym} (${allDriverLocationData.length + 1}/${driversData.length})`);
                     const points = await fetch(
-                        `${BASE_URL}/location?session_key=${sessionKey}&driver_number=${driver.driver_number}&date>=${dateStart}&date<=${dateEnd}`
+                        `${BASE_URL}/location?session_key=${sessionKey}&driver_number=${driver.driver_number}`
                     ).then(r => r.json());
                     if (points.length > 0) {
                         allDriverLocationData.push({ driver, points });
@@ -459,9 +503,17 @@
                 renderer.domElement.addEventListener('mouseleave', () => { isPanning = false; });
 
                 let lastRealTime: number | null = null;
-                const earliestTime: number = Math.min(
+                const firstLocationTime: number = Math.min(
                     ...allDriverLocationData.map(d => new Date(d.points[0].date).getTime())
                 );
+                const firstLapTime: number = allLapData.length > 0
+                    ? Math.min(...allLapData.filter((l: any) => l.date_start).map((l: any) => new Date(l.date_start).getTime()))
+                    : Infinity;
+                // Start 1 minute before the first lap begins so the out-lap is visible.
+                // Fall back to first location point if no lap data available.
+                const earliestTime: number = firstLapTime < Infinity
+                    ? Math.max(firstLocationTime, firstLapTime - 60 * 1000)
+                    : firstLocationTime;
                 const latestTime: number = Math.max(
                     ...allDriverLocationData.map(d => new Date(d.points[d.points.length - 1].date).getTime())
                 );
@@ -488,10 +540,192 @@
                     return `${minutes}:${String(seconds).padStart(2, '0')}`;
                 }
 
+                // ── Qualifying Tower ──────────────────────────────────────
+                function updateQualifyingTower(currentSimTime: number, intervalRows: HTMLElement): void {
+                    // build best lap per driver using only laps completed before currentSimTime
+                    const bestLap: Record<number, number> = {};
+                    const lastLapTime: Record<number, number> = {}; // last lap start time per driver
+                    for (const lap of allLapData) {
+                        if (!lap.date_start || !lap.lap_duration) continue;
+                        const lapStart = new Date(lap.date_start).getTime();
+                        const lapEnd = lapStart + lap.lap_duration * 1000;
+                        if (lapEnd > currentSimTime) continue;
+                        const dn = lap.driver_number;
+                        if (!bestLap[dn] || lap.lap_duration < bestLap[dn]) {
+                            bestLap[dn] = lap.lap_duration;
+                        }
+                        if (!lastLapTime[dn] || lapStart > lastLapTime[dn]) {
+                            lastLapTime[dn] = lapStart;
+                        }
+                    }
+
+                    const driverNums = Object.keys(bestLap).map(Number);
+                    if (driverNums.length === 0) {
+                        intervalRows.innerHTML = '<div style="color:#555;text-align:center;padding:20px 0;font-size:11px;">No lap times yet</div>';
+                        return;
+                    }
+
+                    driverNums.sort((a, b) => bestLap[a] - bestLap[b]);
+
+                    // Use pre-computed stable phase boundaries from load time
+                    const phaseBoundaries = qualPhaseBoundaries;
+
+                    // Determine which phase we're currently in (0 = Q1, 1 = Q2, 2 = Q3)
+                    let currentPhase = 0;
+                    for (const boundary of phaseBoundaries) {
+                        if (currentSimTime > boundary) currentPhase++;
+                    }
+
+                    // Update phase indicator in tower header
+                    const phaseIndicator = document.getElementById('phase-indicator');
+                    if (phaseIndicator) {
+                        const phaseNames = ['Q1', 'Q2', 'Q3'];
+                        const phaseColors = ['#4a9eff', '#ff9f1a', '#cc44ff'];
+                        const clampedPhase = Math.min(currentPhase, 2);
+                        const phaseName = phaseNames[clampedPhase];
+                        const phaseColor = phaseColors[clampedPhase];
+                        // phase has ended if the next boundary exists and sim time is past it
+                        // i.e. we are now in a later phase than this one
+                        const isLastPhase = currentPhase >= phaseBoundaries.length;
+                        phaseIndicator.textContent = !isLastPhase && currentPhase > clampedPhase ? `${phaseName} — ENDED` : phaseName;
+                        phaseIndicator.style.color = phaseColor;
+                        phaseIndicator.style.opacity = '1';
+                    }
+
+                    // Phase time window
+                    const phaseStart = currentPhase === 0 ? 0 : phaseBoundaries[currentPhase - 1];
+                    const phaseEnd = currentPhase < phaseBoundaries.length ? phaseBoundaries[currentPhase] : Infinity;
+
+                    // Best lap set in the current phase (or any phase up to now for ranking)
+                    // Use date_start to place lap in a phase (lap_duration can be null)
+                    const bestLapCurrentPhase: Record<number, number> = {};
+                    for (const lap of allLapData) {
+                        if (!lap.date_start || !lap.lap_duration) continue;
+                        const lapStart = new Date(lap.date_start).getTime();
+                        const lapEnd = lapStart + lap.lap_duration * 1000;
+                        if (lapEnd > currentSimTime) continue;
+                        if (lapStart <= phaseStart || lapStart > phaseEnd) continue;
+                        const dn = lap.driver_number;
+                        if (!bestLapCurrentPhase[dn] || lap.lap_duration < bestLapCurrentPhase[dn]) {
+                            bestLapCurrentPhase[dn] = lap.lap_duration;
+                        }
+                    }
+
+                    // Who has set a lap in the current phase
+                    const activeThisPhase = new Set(Object.keys(bestLapCurrentPhase).map(Number));
+
+                    // Drivers eliminated in previous phases: had a lap before but NOT in the current phase
+                    // (only applies if we're past Q1 boundary)
+                    const eliminatedFromPrevPhase: Set<number> = new Set();
+                    if (currentPhase > 0) {
+                        for (const dn of driverNums) {
+                            if (!activeThisPhase.has(dn)) {
+                                eliminatedFromPrevPhase.add(dn);
+                            }
+                        }
+                    }
+
+                    // Advance counts: Q1->15, Q2->10, Q3->no elimination
+                    const advanceCounts = [15, 10, 999];
+                    const advanceCount = advanceCounts[Math.min(currentPhase, 2)];
+
+                    // Within the current phase, who is in the danger zone (live, session still running)
+                    // Sort drivers who set a lap this phase by their time
+                    const thisPhaseDrivers = [...activeThisPhase].sort((a, b) => bestLapCurrentPhase[a] - bestLapCurrentPhase[b]);
+                    const eliminatedThisPhase: Set<number> = new Set();
+
+                    // Check if we're past phase end (i.e. at least one phase boundary has passed since phaseStart)
+                    const phaseEnded = phaseBoundaries.length > currentPhase;
+                    if (phaseEnded && advanceCount < 999 && thisPhaseDrivers.length > advanceCount) {
+                        thisPhaseDrivers.slice(advanceCount).forEach(dn => eliminatedThisPhase.add(dn));
+                    }
+
+                    // Build display: active (not eliminated) first, then eliminated from this phase, then prev phase
+                    const sortedActive = thisPhaseDrivers.slice(0, phaseEnded ? advanceCount : undefined);
+                    const sortedElimThisPhase = [...eliminatedThisPhase].sort((a, b) => (bestLapCurrentPhase[a] || 0) - (bestLapCurrentPhase[b] || 0));
+                    const sortedElimPrev = [...eliminatedFromPrevPhase].sort((a, b) => (bestLap[a] || 0) - (bestLap[b] || 0));
+
+                    // Drivers with no lap this phase but also not eliminated (no lap yet)
+                    const noLapYet = driverNums.filter(dn => !activeThisPhase.has(dn) && !eliminatedFromPrevPhase.has(dn));
+
+                    const orderedDriverNums = [...sortedActive, ...noLapYet, ...sortedElimThisPhase, ...sortedElimPrev];
+
+                    // Live danger zone: bottom of current phase drivers who are at risk
+                    const liveEliminationStart = (!phaseEnded && advanceCount < 999) ? advanceCount : -1;
+
+                    const poleLap = bestLapCurrentPhase[sortedActive[0]] ?? bestLap[driverNums[0]];
+
+                    intervalRows.innerHTML = '';
+                    orderedDriverNums.forEach((dn, i) => {
+                        const info = driverInfoMap[dn] || { acronym: '#' + dn, colour: '#fff' };
+                        const isPole = i === 0;
+                        const isElimPrev = eliminatedFromPrevPhase.has(dn);
+                        const isElimThis = eliminatedThisPhase.has(dn);
+                        const isEliminated = isElimPrev || isElimThis;
+                        // live danger: in current phase, ranked beyond advanceCount
+                        const liveRankInPhase = thisPhaseDrivers.indexOf(dn);
+                        const isInDanger = !phaseEnded && liveRankInPhase >= advanceCount;
+
+                        const lapSec = bestLapCurrentPhase[dn] ?? bestLap[dn];
+                        const mins = Math.floor(lapSec / 60);
+                        const secs = (lapSec % 60).toFixed(3).padStart(6, '0');
+                        const lapTimeStr = `${mins}:${secs}`;
+                        const deltaStr = isPole ? lapTimeStr : '+' + (lapSec - poleLap).toFixed(3);
+
+                        const showRed = isEliminated || isInDanger;
+
+                        const rowEl = document.createElement('div');
+                        rowEl.style.cssText = `display:flex;align-items:center;gap:6px;padding:4px 6px;border-bottom:1px solid ${showRed ? '#3a1010' : '#1e1e1e'};${showRed ? 'background:#1a0a0a;' : ''}`;
+
+                        const posEl = document.createElement('span');
+                        posEl.style.cssText = `color:${showRed ? '#7a2020' : '#666'};font-size:11px;min-width:16px;text-align:right;`;
+                        posEl.textContent = String(i + 1);
+
+                        const dot = document.createElement('span');
+                        dot.style.cssText = `display:inline-block;width:7px;height:7px;border-radius:50%;background:${info.colour};flex-shrink:0;`;
+
+                        const acronym = document.createElement('span');
+                        acronym.style.cssText = `font-weight:bold;font-size:12px;min-width:34px;letter-spacing:0.04em;color:${showRed ? '#e03030' : '#fff'};`;
+                        acronym.textContent = info.acronym;
+
+                        const rightCol = document.createElement('div');
+                        rightCol.style.cssText = 'margin-left:auto;text-align:right;display:flex;flex-direction:column;gap:1px;';
+
+                        const timeEl = document.createElement('span');
+                        timeEl.style.cssText = `font-size:11px;color:${isPole ? '#f0c040' : showRed ? '#e03030' : '#ccc'};`;
+                        timeEl.textContent = isElimPrev ? 'OUT' : deltaStr;
+
+                        const lapEl = document.createElement('span');
+                        lapEl.style.cssText = `font-size:10px;color:${showRed ? '#7a2020' : '#555'};`;
+                        lapEl.textContent = (isPole || isElimPrev) ? '' : lapTimeStr;
+
+                        rightCol.appendChild(timeEl);
+                        rightCol.appendChild(lapEl);
+
+                        rowEl.appendChild(posEl);
+                        rowEl.appendChild(dot);
+                        rowEl.appendChild(acronym);
+                        rowEl.appendChild(rightCol);
+                        intervalRows.appendChild(rowEl);
+                    });
+    
+                }
+
                 // ── Interval Tower ────────────────────────────────────────
                 function updateIntervalTower(currentSimTime: number): void {
                     const intervalRows = document.getElementById('interval-rows');
-                    if (!intervalRows || allIntervalData.length === 0) return;
+                    if (!intervalRows) return;
+
+                    if (isQualifying) {
+                        updateQualifyingTower(currentSimTime, intervalRows);
+                        return;
+                    }
+
+                    // Race session — clear phase indicator
+                    const racePhaseEl = document.getElementById('phase-indicator');
+                    if (racePhaseEl) racePhaseEl.textContent = '';
+
+                    if (allIntervalData.length === 0) return;
 
                     // get latest interval entry per driver at or before currentSimTime
                     const latestInterval: Record<number, any> = {};
@@ -691,7 +925,7 @@
                     const speedMultiplier = Number((document.getElementById('speed-select') as HTMLSelectElement).value);
                     simulatedTime += realElapsed * speedMultiplier;
 
-                    let reachedEnd = false;
+                    let reachedEnd = true; // assume done unless a driver still has points ahead
 
                     for (const driverDot of driverDots) {
                         while (
@@ -700,8 +934,8 @@
                         ) {
                             driverDot.index++;
                         }
-                        if (driverDot.index >= driverDot.rawPoints.length - 1) {
-                            reachedEnd = true;
+                        if (driverDot.index < driverDot.rawPoints.length - 1) {
+                            reachedEnd = false;
                         }
                         const currentPoint = driverDot.mappedPoints[driverDot.index];
                         driverDot.dotMesh.position.set(currentPoint.x, currentPoint.y, 1);
@@ -709,10 +943,9 @@
                     }
 
                     if (reachedEnd) {
-                        for (const driverDot of driverDots) {
-                            driverDot.index = 0;
-                        }
-                        simulatedTime = earliestTime;
+                        isPlaying = false;
+                        lastRealTime = null;
+                        (document.getElementById('play-pause-button') as HTMLButtonElement).textContent = 'Play';
                     }
 
                     const elapsed = simulatedTime - earliestTime;
