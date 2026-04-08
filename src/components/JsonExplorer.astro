@@ -10,7 +10,7 @@
     <select id="session-select"><option value="">— Session —</option></select>
     <select id="driver-select"><option value="">— All drivers —</option></select>
 
-    <div id="endpoint-buttons"></div>
+    <select id="endpoint-select"></select>
     <div id="url-display"></div>
 
     <button id="fetch-button" disabled>Fetch JSON</button>
@@ -27,15 +27,16 @@
     let selectedDriverNumber = null;
     let activeEndpointPath = ENDPOINTS[0].path;
 
-    const endpointButtonsContainer = document.getElementById('endpoint-buttons');
+    const endpointSelect = document.getElementById('endpoint-select');
     ENDPOINTS.forEach(endpoint => {
-        const button = document.createElement('button');
-        button.textContent = endpoint.label;
-        button.addEventListener('click', () => {
-            activeEndpointPath = endpoint.path;
-            updateUrlDisplay();
-        });
-        endpointButtonsContainer?.appendChild(button);
+        const option = document.createElement('option');
+        option.value = endpoint.path;
+        option.textContent = endpoint.label;
+        endpointSelect?.appendChild(option);
+    });
+    endpointSelect?.addEventListener('change', function () {
+        activeEndpointPath = this.value;
+        updateUrlDisplay();
     });
 
     function buildRequestUrl() {
