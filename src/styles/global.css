@@ -384,9 +384,11 @@ label {
 }
 
 .race-flag {
-    font-size: 16px;
+    width: 20px;
+        height: 15px;
+        object-fit: cover;
+        border-radius: 2px;
     flex-shrink: 0;
-    line-height: 1;
 }
 
 .race-name {
