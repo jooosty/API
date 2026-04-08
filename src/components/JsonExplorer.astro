@@ -1,0 +1,179 @@
+---
+---
+<div id="app">
+    <select id="year-select">
+        <option value="2025">2025</option>
+        <option value="2024">2024</option>
+        <option value="2023">2023</option>
+    </select>
+    <select id="meeting-select"><option value="">— Select race —</option></select>
+    <select id="session-select"><option value="">— Session —</option></select>
+    <select id="driver-select"><option value="">— All drivers —</option></select>
+
+    <div id="endpoint-buttons"></div>
+    <div id="url-display"></div>
+
+    <button id="fetch-button" disabled>Fetch JSON</button>
+    <button id="copy-button">Copy</button>
+    <span id="status-message"></span>
+
+    <pre id="json-output">// JSON will appear here</pre>
+</div>
+
+<script>
+    import { BASE_URL, ENDPOINTS, ENDPOINTS_WITHOUT_DRIVER_FILTER } from '../scripts/constants.js';
+
+    let selectedSessionKey = null;
+    let selectedDriverNumber = null;
+    let activeEndpointPath = ENDPOINTS[0].path;
+
+    const endpointButtonsContainer = document.getElementById('endpoint-buttons');
+    ENDPOINTS.forEach(endpoint => {
+        const button = document.createElement('button');
+        button.textContent = endpoint.label;
+        button.addEventListener('click', () => {
+            activeEndpointPath = endpoint.path;
+            updateUrlDisplay();
+        });
+        endpointButtonsContainer?.appendChild(button);
+    });
+
+    function buildRequestUrl() {
+        let url = `${BASE_URL}${activeEndpointPath}?session_key=${selectedSessionKey}`;
+        const driverFilterAllowed = !ENDPOINTS_WITHOUT_DRIVER_FILTER.includes(activeEndpointPath);
+        if (selectedDriverNumber && driverFilterAllowed) {
+            if (activeEndpointPath === '/overtakes') {
+                url += `&overtaking_driver_number=${selectedDriverNumber}&overtaken_driver_number=${selectedDriverNumber}`;
+            } else {
+                url += `&driver_number=${selectedDriverNumber}`;
+            }
+        }
+        return url;
+    }
+
+    async function fetchAndMergeOvertakes() {
+        const overtakingUrl = `${BASE_URL}/overtakes?session_key=${selectedSessionKey}&overtaking_driver_number=${selectedDriverNumber}`;
+        const overtakenUrl  = `${BASE_URL}/overtakes?session_key=${selectedSessionKey}&overtaken_driver_number=${selectedDriverNumber}`;
+        const [overtakingResults, overtakenResults] = await Promise.all([
+            fetch(overtakingUrl).then(r => r.json()),
+            fetch(overtakenUrl).then(r => r.json()),
+        ]);
+        const merged = [...overtakingResults, ...overtakenResults];
+        merged.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        return merged;
+    }
+
+    function updateUrlDisplay() {
+        const urlDisplay = document.getElementById('url-display');
+        if (!selectedSessionKey || !urlDisplay) return;
+        if (activeEndpointPath === '/overtakes' && selectedDriverNumber) {
+            urlDisplay.textContent = `${BASE_URL}/overtakes?session_key=${selectedSessionKey}&overtaking_driver_number=${selectedDriverNumber} + overtaken_driver_number=${selectedDriverNumber} (merged)`;
+        } else {
+            urlDisplay.textContent = buildRequestUrl();
+        }
+        document.getElementById('fetch-button').disabled = false;
+    }
+
+    async function loadMeetings() {
+        const year = document.getElementById('year-select').value;
+        const meetingsData = await fetch(`${BASE_URL}/meetings?year=${year}`).then(r => r.json());
+        meetingsData.sort((a, b) => new Date(a.date_start).getTime() - new Date(b.date_start).getTime());
+        const meetingSelect = document.getElementById('meeting-select');
+        meetingSelect.innerHTML = '<option value="">— Select race —</option>';
+        meetingsData.forEach(meeting => {
+            const option = document.createElement('option');
+            option.value = meeting.meeting_key;
+            option.textContent = meeting.meeting_name;
+            meetingSelect.appendChild(option);
+        });
+        document.getElementById('session-select').innerHTML = '<option value="">— Session —</option>';
+        document.getElementById('driver-select').innerHTML  = '<option value="">— All drivers —</option>';
+        selectedSessionKey   = null;
+        selectedDriverNumber = null;
+        document.getElementById('fetch-button').disabled = true;
+        updateUrlDisplay();
+    }
+
+    async function loadSessions() {
+        const meetingSelect = document.getElementById('meeting-select');
+        if (!meetingSelect.value) return;
+        const sessionsData = await fetch(`${BASE_URL}/sessions?meeting_key=${meetingSelect.value}`).then(r => r.json());
+        const sessionSelect = document.getElementById('session-select');
+        sessionSelect.innerHTML = '<option value="">— Session —</option>';
+        sessionsData.forEach(session => {
+            const option = document.createElement('option');
+            option.value = session.session_key;
+            option.textContent = session.session_name;
+            sessionSelect.appendChild(option);
+        });
+        selectedSessionKey   = null;
+        selectedDriverNumber = null;
+        document.getElementById('driver-select').innerHTML = '<option value="">— All drivers —</option>';
+        document.getElementById('fetch-button').disabled = true;
+        updateUrlDisplay();
+    }
+
+    async function loadDrivers(sessionKey) {
+        const driversData = await fetch(`${BASE_URL}/drivers?session_key=${sessionKey}`).then(r => r.json());
+        driversData.sort((a, b) => a.driver_number - b.driver_number);
+        const driverSelect = document.getElementById('driver-select');
+        driverSelect.innerHTML = '<option value="">— All drivers —</option>';
+        driversData.forEach(driver => {
+            const option = document.createElement('option');
+            option.value = driver.driver_number;
+            option.textContent = `${driver.name_acronym} — #${driver.driver_number} — ${driver.team_name}`;
+            driverSelect.appendChild(option);
+        });
+    }
+
+    async function fetchJson() {
+        const statusMessage = document.getElementById('status-message');
+        const jsonOutput    = document.getElementById('json-output');
+        if (!statusMessage || !jsonOutput) return;
+        statusMessage.textContent = 'Fetching...';
+        jsonOutput.textContent = '// loading...';
+        try {
+            const startTime = Date.now();
+            let responseData;
+            if (activeEndpointPath === '/overtakes' && selectedDriverNumber) {
+                responseData = await fetchAndMergeOvertakes();
+            } else {
+                responseData = await fetch(buildRequestUrl()).then(r => r.json());
+            }
+            jsonOutput.textContent = JSON.stringify(responseData, null, 2);
+            statusMessage.textContent = `${Array.isArray(responseData) ? responseData.length + ' records' : 'object'} · ${Date.now() - startTime}ms`;
+        } catch (error) {
+            statusMessage.textContent = error.message;
+            jsonOutput.textContent = '// error: ' + error.message;
+        }
+    }
+
+    function copyJson() {
+        const jsonOutput = document.getElementById('json-output');
+        if (jsonOutput) navigator.clipboard.writeText(jsonOutput.textContent ?? '').catch(() => {});
+    }
+
+    document.getElementById('year-select')?.addEventListener('change', loadMeetings);
+    document.getElementById('meeting-select')?.addEventListener('change', loadSessions);
+
+    document.getElementById('session-select')?.addEventListener('change', async function () {
+        selectedSessionKey   = this.value || null;
+        selectedDriverNumber = null;
+        document.getElementById('driver-select').innerHTML = '<option value="">— All drivers —</option>';
+        if (selectedSessionKey) await loadDrivers(selectedSessionKey);
+        updateUrlDisplay();
+
+        // notify TrackVisualiser of the new session key
+        window.dispatchEvent(new CustomEvent('session-changed', { detail: { sessionKey: selectedSessionKey } }));
+    });
+
+    document.getElementById('driver-select')?.addEventListener('change', function () {
+        selectedDriverNumber = this.value || null;
+        updateUrlDisplay();
+    });
+
+    document.getElementById('fetch-button')?.addEventListener('click', fetchJson);
+    document.getElementById('copy-button')?.addEventListener('click', copyJson);
+
+    loadMeetings();
+</script>
