@@ -1,66 +1,155 @@
-/* ── Global ──────────────────────────────────────────────────── */
+/* ── Reset & base ────────────────────────────────────────────── */
 
-body {
-    font-family: monospace;
-    margin: 16px;
-    background: #0e0e0e;
-    color: #ccc;
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
+:root {
+    --bg:        #0e0e0e;
+    --bg-card:   #141414;
+    --bg-input:  #1a1a1a;
+    --bg-hover:  #222;
+    --border:    #2a2a2a;
+    --border-hi: #3a3a3a;
+    --accent:    #e10600;
+    --text:      #e0e0e0;
+    --text-muted:#666;
+    --text-dim:  #999;
+    --mono:      'JetBrains Mono', 'Fira Code', monospace;
+    --radius:    6px;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px;
+    line-height: 1.5;
+}
+
+/* ── Typography ──────────────────────────────────────────────── */
+
 h2 {
-    margin: 16px 0 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+h2::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 14px;
+    background: var(--accent);
+    border-radius: 2px;
+    flex-shrink: 0;
 }
 
 hr {
     border: none;
-    border-top: 1px solid #333;
-    margin: 24px 0;
+    border-top: 1px solid var(--border);
+    margin: 32px 0;
 }
 
-button,
+/* ── Form controls ───────────────────────────────────────────── */
+
 select,
-input[type="range"] {
+button {
+    font-family: inherit;
+    font-size: 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
     cursor: pointer;
 }
 
-/* ── JSON Explorer ───────────────────────────────────────────── */
+select {
+    background: var(--bg-input);
+    color: var(--text);
+    padding: 6px 28px 6px 10px;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+}
 
-#app {
+select:hover,
+select:focus {
+    border-color: var(--border-hi);
+}
+
+button {
+    background: var(--bg-input);
+    color: var(--text);
+    padding: 6px 14px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+}
+
+button:hover:not(:disabled) {
+    background: var(--bg-hover);
+    border-color: var(--border-hi);
+}
+
+button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+
+button.primary:hover:not(:disabled) {
+    background: #c00500;
+    border-color: #c00500;
+}
+
+label {
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+/* ── Track Visualiser ────────────────────────────────────────── */
+
+.visualiser-header {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-width: 900px;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
 }
 
-#url-display {
+.visualiser-header h2 {
+    margin-bottom: 0;
+}
+
+.active-session-label {
     font-size: 12px;
-    color: #888;
-    word-break: break-all;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+    font-family: var(--mono);
 }
-
-#status-message {
-    font-size: 12px;
-    color: #888;
-}
-
-#json-output {
-    background: #111;
-    color: #ccc;
-    padding: 12px;
-    border-radius: 4px;
-    font-size: 12px;
-    max-height: 400px;
-    overflow: auto;
-    white-space: pre;
-}
-
-/* ── Track Visualiser controls ───────────────────────────────── */
 
 .visualiser-controls {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 6px;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
 }
 
 .visualiser-layout {
@@ -75,6 +164,9 @@ input[type="range"] {
     width: 800px;
     height: 600px;
     background: #1a1a1a;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
 }
 
 .timeline-row {
@@ -82,39 +174,45 @@ input[type="range"] {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-top: 6px;
+    margin-top: 8px;
 }
 
 #time-display,
 #time-total {
-    font-family: monospace;
-    font-size: 13px;
-    min-width: 50px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    min-width: 48px;
 }
 
 #timeline-scrubber {
     flex: 1;
+    accent-color: var(--accent);
+    cursor: pointer;
 }
 
 /* ── Interval tower ──────────────────────────────────────────── */
 
 #interval-tower {
-    background: #111;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
     color: #fff;
     width: 220px;
     min-height: 600px;
-    font-family: monospace;
+    font-family: var(--mono);
     font-size: 13px;
     padding: 8px 0;
     flex-shrink: 0;
+    overflow: hidden;
 }
 
 .tower-header {
     text-align: center;
-    font-size: 11px;
-    color: #888;
+    font-size: 10px;
+    color: var(--text-muted);
     padding: 4px 8px;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
 }
 
@@ -123,7 +221,7 @@ input[type="range"] {
     font-size: 13px;
     font-weight: bold;
     padding: 4px 8px 8px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border);
     margin-bottom: 4px;
     letter-spacing: 0.1em;
 }
@@ -133,8 +231,289 @@ input[type="range"] {
 }
 
 .tower-empty {
-    color: #555;
+    color: var(--text-muted);
     text-align: center;
-    padding: 20px 0;
+    padding: 24px 0;
     font-size: 11px;
+    letter-spacing: 0.06em;
+}
+
+/* ── Race Calendar ───────────────────────────────────────────── */
+
+.calendar-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.calendar-toolbar h2 {
+    margin-bottom: 0;
+}
+
+.calendar-year-tabs {
+    display: flex;
+    gap: 4px;
+}
+
+.year-tab {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    padding: 5px 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: var(--text-muted);
+    transition: all 0.15s;
+}
+
+.year-tab:hover {
+    border-color: var(--border-hi);
+    color: var(--text);
+}
+
+.year-tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+
+.calendar-loading {
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: 40px 0;
+    text-align: center;
+    letter-spacing: 0.06em;
+}
+
+/* ── Carousel ────────────────────────────────────────────────── */
+
+.carousel-wrapper {
+    position: relative;
+}
+
+.carousel-track-outer {
+    overflow: hidden;
+    border-radius: var(--radius);
+}
+
+.carousel-track {
+    display: flex;
+    gap: 12px;
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+}
+
+.carousel-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 12px;
+}
+
+.carousel-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.carousel-dots {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.carousel-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--border-hi);
+    transition: background 0.2s, transform 0.2s;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+}
+
+.carousel-dot.active {
+    background: var(--accent);
+    transform: scale(1.3);
+}
+
+/* ── Race card ───────────────────────────────────────────────── */
+
+.race-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color 0.15s;
+    flex: 0 0 300px;
+}
+
+.race-card:hover {
+    border-color: var(--border-hi);
+}
+
+.race-card.next {
+    border-color: var(--accent);
+}
+
+.race-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-input);
+    position: relative;
+}
+
+.race-round {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+    flex-shrink: 0;
+}
+
+.race-flag {
+    font-size: 16px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.race-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.race-date-range {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.next-badge {
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 2px 7px;
+    border-radius: 0 var(--radius) 0 var(--radius);
+}
+
+/* ── Session rows ────────────────────────────────────────────── */
+
+.race-sessions {
+    padding: 4px 0;
+}
+
+.session-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+}
+
+.session-row:last-child {
+    border-bottom: none;
+}
+
+.session-row:hover {
+    background: var(--bg-hover);
+}
+
+
+.session-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.session-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    min-width: 32px;
+    text-align: center;
+}
+
+.session-practice .session-badge  { background: #1a2a1a; color: #4caf50; }
+.session-quali    .session-badge  { background: #1a1a2e; color: #4a9eff; }
+.session-race     .session-badge  { background: #2a0a0a; color: var(--accent); }
+.session-sprint   .session-badge  { background: #2a1a00; color: #ff9f1a; }
+.session-other    .session-badge  { background: var(--bg-input); color: var(--text-muted); }
+
+.session-name {
+    font-size: 11px;
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.session-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
+    flex-shrink: 0;
+}
+
+.session-date {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+}
+
+.session-time {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.session-load-btn {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    padding: 3px 10px;
+    flex-shrink: 0;
+    color: var(--text-muted);
+    border-color: var(--border);
+}
+
+.session-load-btn:hover:not(:disabled) {
+    color: var(--text);
+    border-color: var(--border-hi);
+}
+
+.session-load-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
 }

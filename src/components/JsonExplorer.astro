@@ -1,23 +1,43 @@
 ---
 ---
 <div id="app">
-    <select id="year-select">
-        <option value="2025">2025</option>
-        <option value="2024">2024</option>
-        <option value="2023">2023</option>
-    </select>
-    <select id="meeting-select"><option value="">— Select race —</option></select>
-    <select id="session-select"><option value="">— Session —</option></select>
-    <select id="driver-select"><option value="">— All drivers —</option></select>
+    <div class="explorer-selects">
+        <div class="select-group">
+            <label for="year-select">Season</label>
+            <select id="year-select">
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+            </select>
+        </div>
+        <div class="select-group">
+            <label for="meeting-select">Race</label>
+            <select id="meeting-select"><option value="">— Select race —</option></select>
+        </div>
+        <div class="select-group">
+            <label for="session-select">Session</label>
+            <select id="session-select"><option value="">— Session —</option></select>
+        </div>
+        <div class="select-group">
+            <label for="driver-select">Driver</label>
+            <select id="driver-select"><option value="">— All drivers —</option></select>
+        </div>
+        <div class="select-group">
+            <label for="endpoint-select">Endpoint</label>
+            <select id="endpoint-select"></select>
+        </div>
+    </div>
 
-    <select id="endpoint-select"></select>
-    <div id="url-display"></div>
-
-    <button id="fetch-button" disabled>Fetch JSON</button>
-    <button id="copy-button">Copy</button>
-    <span id="status-message"></span>
-
-    <pre id="json-output">// JSON will appear here</pre>
+    <div class="json-panel">
+        <div class="json-panel-header">
+            <span class="json-panel-title">Response</span>
+            <span id="record-count" class="json-record-count"></span>
+            <button id="fetch-button" class="primary" disabled>&#9654; Fetch</button>
+            <button id="copy-button">&#10697; Copy</button>
+            <span id="status-message"></span>
+        </div>
+        <pre id="json-output">// select a session and endpoint to fetch data</pre>
+    </div>
 </div>
 
 <script>
@@ -142,7 +162,10 @@
                 responseData = await fetch(buildRequestUrl()).then(r => r.json());
             }
             jsonOutput.textContent = JSON.stringify(responseData, null, 2);
-            statusMessage.textContent = `${Array.isArray(responseData) ? responseData.length + ' records' : 'object'} · ${Date.now() - startTime}ms`;
+            const count = Array.isArray(responseData) ? responseData.length : null;
+            statusMessage.textContent = `${count !== null ? count + ' records' : 'object'} · ${Date.now() - startTime}ms`;
+            const recordCount = document.getElementById('record-count');
+            if (recordCount) recordCount.textContent = count !== null ? `${count} records` : 'object';
         } catch (error) {
             statusMessage.textContent = error.message;
             jsonOutput.textContent = '// error: ' + error.message;

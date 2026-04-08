@@ -1,8 +1,12 @@
 ---
 ---
-<h2>Track Visualiser</h2>
+<div id="visualiser-section">
+<div class="visualiser-header">
+    <h2>Track Visualiser</h2>
+    <span id="active-session-label" class="active-session-label"></span>
+</div>
 <div class="visualiser-controls">
-    <button id="load-track-button">Load Track</button>
+    <button id="load-track-button" class="primary">Load Track</button>
     <label for="speed-select">Speed:</label>
     <select id="speed-select">
         <option value="1">1x</option>
@@ -31,6 +35,7 @@
         </div>
     </div>
 </div>
+</div>
 
 <script>
     import * as THREE from 'three';
@@ -52,10 +57,37 @@
     renderer.setPixelRatio(window.devicePixelRatio);
     document.getElementById('track-container')?.appendChild(renderer.domElement);
 
-    // track the current session key, updated via event from JsonExplorer
+    function setLoadControls(isLoading) {
+        const loadButton = document.getElementById('load-track-button');
+        const playPauseButton = document.getElementById('play-pause-button');
+        const timelineScrubber = document.getElementById('timeline-scrubber');
+
+        if (loadButton) {
+            loadButton.disabled = isLoading;
+            loadButton.textContent = isLoading ? 'Loading...' : 'Reload';
+        }
+        if (playPauseButton) playPauseButton.disabled = isLoading;
+        if (timelineScrubber) timelineScrubber.disabled = isLoading;
+    }
+
+    async function startTrackLoad() {
+        setLoadControls(true);
+        try {
+            await loadTrack();
+        } finally {
+            setLoadControls(false);
+        }
+    }
+
     let currentSessionKey = null;
     window.addEventListener('session-changed', (e) => {
         currentSessionKey = e.detail.sessionKey;
+        const label = document.getElementById('active-session-label');
+        if (label) {
+            label.textContent = `${e.detail.meetingName} — ${e.detail.sessionName}`;
+        }
+
+        void startTrackLoad();
     });
 
     // ── Load track ────────────────────────────────────────────
@@ -412,13 +444,6 @@
 
     // ── Load button ───────────────────────────────────────────
     document.getElementById('load-track-button')?.addEventListener('click', async () => {
-        const btn = document.getElementById('load-track-button');
-        btn.disabled = true;
-        btn.textContent = 'Loading...';
-        await loadTrack();
-        btn.textContent = 'Reload';
-        btn.disabled = false;
-        document.getElementById('play-pause-button').disabled = false;
-        document.getElementById('timeline-scrubber').disabled = false;
+        await startTrackLoad();
     });
 </script>

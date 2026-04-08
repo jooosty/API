@@ -1,0 +1,262 @@
+---
+---
+<div id="calendar-section">
+    <div class="calendar-toolbar">
+        <h2>Season Calendar</h2>
+        <div class="calendar-year-tabs" id="year-tabs">
+            <button class="year-tab active" data-year="2025">2025</button>
+            <button class="year-tab" data-year="2024">2024</button>
+            <button class="year-tab" data-year="2023">2023</button>
+        </div>
+    </div>
+
+    <div class="carousel-wrapper">
+        <div class="carousel-track-outer">
+            <div id="calendar-track" class="carousel-track">
+                <div class="calendar-loading">Loading calendar...</div>
+            </div>
+        </div>
+        <div class="carousel-nav">
+            <button class="carousel-btn" id="carousel-prev">&#8592;</button>
+            <div class="carousel-dots" id="carousel-dots"></div>
+            <button class="carousel-btn" id="carousel-next">&#8594;</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    import { BASE_URL } from '../scripts/constants.js';
+
+    const SESSION_LABELS = {
+        'Practice 1':      { short: 'FP1', cls: 'practice' },
+        'Practice 2':      { short: 'FP2', cls: 'practice' },
+        'Practice 3':      { short: 'FP3', cls: 'practice' },
+        'Sprint':          { short: 'SPR', cls: 'sprint'   },
+        'Sprint Shootout': { short: 'SQ',  cls: 'sprint'   },
+        'Qualifying':      { short: 'Q',   cls: 'quali'    },
+        'Race':            { short: 'R',   cls: 'race'     },
+    };
+
+    const CARD_WIDTH = 300;
+    const CARD_GAP   = 12;
+    const CARDS_VISIBLE = 3;
+
+    let currentIndex = 0;
+    let totalCards   = 0;
+
+    const track = document.getElementById('calendar-track');
+    const dotsEl = document.getElementById('carousel-dots');
+
+    function formatDate(iso) {
+        if (!iso) return '';
+        return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    }
+
+    function formatTime(iso) {
+        if (!iso) return '';
+        return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function countryFlag(code) {
+        const map = {
+            'AUS': '🇦🇺', 'CHN': '🇨🇳', 'JPN': '🇯🇵', 'BHR': '🇧🇭', 'SAU': '🇸🇦',
+            'USA': '🇺🇸', 'ITA': '🇮🇹', 'MCO': '🇲🇨', 'CAN': '🇨🇦', 'ESP': '🇪🇸',
+            'AUT': '🇦🇹', 'GBR': '🇬🇧', 'HUN': '🇭🇺', 'BEL': '🇧🇪', 'NLD': '🇳🇱',
+            'AZE': '🇦🇿', 'SGP': '🇸🇬', 'MEX': '🇲🇽', 'BRA': '🇧🇷', 'UAE': '🇦🇪',
+            'QAT': '🇶🇦', 'MYS': '🇲🇾', 'LAS': '🇺🇸',
+        };
+        return map[code] || '';
+    }
+
+    function slideTo(index) {
+        currentIndex = Math.max(0, Math.min(index, totalCards - CARDS_VISIBLE));
+        const offset = currentIndex * (CARD_WIDTH + CARD_GAP);
+        track.style.transform = `translateX(-${offset}px)`;
+        document.querySelectorAll('.carousel-dot').forEach((dot, i) => {
+            dot.classList.toggle('active', i === currentIndex);
+        });
+    }
+
+    function buildDots(count) {
+        dotsEl.innerHTML = '';
+        const dotCount = Math.max(0, count - CARDS_VISIBLE + 1);
+        for (let i = 0; i < dotCount; i++) {
+            const dot = document.createElement('button');
+            dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+            dot.addEventListener('click', () => slideTo(i));
+            dotsEl.appendChild(dot);
+        }
+    }
+
+    document.getElementById('carousel-prev')?.addEventListener('click', () => slideTo(currentIndex - 1));
+    document.getElementById('carousel-next')?.addEventListener('click', () => slideTo(currentIndex + 1));
+
+    // keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft')  slideTo(currentIndex - 1);
+        if (e.key === 'ArrowRight') slideTo(currentIndex + 1);
+    });
+
+    async function loadCalendar(year) {
+        track.innerHTML = '<div class="calendar-loading">Loading calendar...</div>';
+        track.style.transform = 'translateX(0)';
+        dotsEl.innerHTML = '';
+        currentIndex = 0;
+
+        const [meetings, sessions] = await Promise.all([
+            fetch(`${BASE_URL}/meetings?year=${year}`).then(r => r.json()),
+            fetch(`${BASE_URL}/sessions?year=${year}`).then(r => r.json()),
+        ]);
+
+        meetings.sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
+
+        const sessionsByMeeting = {};
+        for (const s of sessions) {
+            if (!sessionsByMeeting[s.meeting_key]) sessionsByMeeting[s.meeting_key] = [];
+            sessionsByMeeting[s.meeting_key].push(s);
+        }
+        for (const key of Object.keys(sessionsByMeeting)) {
+            sessionsByMeeting[key].sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
+        }
+
+        const now = Date.now();
+        totalCards = meetings.length;
+        track.innerHTML = '';
+
+        let nextFound = false;
+
+        meetings.forEach((meeting, idx) => {
+            const meetingSessions = sessionsByMeeting[meeting.meeting_key] || [];
+            const lastSession = meetingSessions[meetingSessions.length - 1];
+            const isPast = lastSession
+                ? new Date(lastSession.date_end || lastSession.date_start) < now
+                : new Date(meeting.date_start) < now;
+            const isNext = !isPast && !nextFound;
+            if (isNext) nextFound = true;
+
+            const card = document.createElement('div');
+            card.className = `race-card${isPast ? ' past' : ''}${isNext ? ' next' : ''}`;
+
+            // header
+            const header = document.createElement('div');
+            header.className = 'race-card-header';
+
+            if (isNext) {
+                const nextBadge = document.createElement('span');
+                nextBadge.className = 'next-badge';
+                nextBadge.textContent = 'NEXT';
+                header.appendChild(nextBadge);
+            }
+
+            const round = document.createElement('span');
+            round.className = 'race-round';
+            round.textContent = `R${String(idx + 1).padStart(2, '0')}`;
+
+            const flag = document.createElement('span');
+            flag.className = 'race-flag';
+            flag.textContent = countryFlag(meeting.country_code);
+
+            const name = document.createElement('div');
+            name.className = 'race-name';
+            name.textContent = meeting.meeting_name;
+
+            const dateRange = document.createElement('div');
+            dateRange.className = 'race-date-range';
+            dateRange.textContent = formatDate(meeting.date_start);
+
+            header.appendChild(round);
+            header.appendChild(flag);
+            header.appendChild(name);
+            header.appendChild(dateRange);
+            card.appendChild(header);
+
+            // sessions
+            const sessionsEl = document.createElement('div');
+            sessionsEl.className = 'race-sessions';
+
+            meetingSessions.forEach(session => {
+                const meta = SESSION_LABELS[session.session_name] || { short: session.session_name, cls: 'other' };
+                const sessionEl = document.createElement('div');
+                sessionEl.className = `session-row session-${meta.cls}`;
+                if (new Date(session.date_end || session.date_start) < now) {
+                    sessionEl.classList.add('session-past');
+                }
+
+                const left = document.createElement('div');
+                left.className = 'session-left';
+
+                const badge = document.createElement('span');
+                badge.className = 'session-badge';
+                badge.textContent = meta.short;
+
+                const sessionName = document.createElement('span');
+                sessionName.className = 'session-name';
+                sessionName.textContent = session.session_name;
+
+                left.appendChild(badge);
+                left.appendChild(sessionName);
+
+                const right = document.createElement('div');
+                right.className = 'session-right';
+
+                const date = document.createElement('span');
+                date.className = 'session-date';
+                date.textContent = formatDate(session.date_start);
+
+                const time = document.createElement('span');
+                time.className = 'session-time';
+                time.textContent = formatTime(session.date_start);
+
+                right.appendChild(date);
+                right.appendChild(time);
+
+                const loadBtn = document.createElement('button');
+                loadBtn.className = 'session-load-btn';
+                loadBtn.textContent = 'Load';
+                loadBtn.addEventListener('click', () => {
+                    document.querySelectorAll('.session-load-btn.active').forEach(b => {
+                        b.textContent = 'Load';
+                        b.classList.remove('active');
+                    });
+                    loadBtn.textContent = 'Loaded';
+                    loadBtn.classList.add('active');
+                    window.dispatchEvent(new CustomEvent('session-changed', {
+                        detail: {
+                            sessionKey:  session.session_key,
+                            sessionName: session.session_name,
+                            meetingName: meeting.meeting_name,
+                        }
+                    }));
+                    document.getElementById('visualiser-section')
+                        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+
+                sessionEl.appendChild(left);
+                sessionEl.appendChild(right);
+                sessionEl.appendChild(loadBtn);
+                sessionsEl.appendChild(sessionEl);
+            });
+
+            card.appendChild(sessionsEl);
+            track.appendChild(card);
+
+            // auto-scroll carousel to next race
+            if (isNext) {
+                const targetIndex = Math.max(0, idx - 1);
+                setTimeout(() => slideTo(targetIndex), 50);
+            }
+        });
+
+        buildDots(totalCards);
+    }
+
+    document.querySelectorAll('.year-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.year-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            loadCalendar(tab.dataset.year);
+        });
+    });
+
+    loadCalendar('2025');
+</script>
