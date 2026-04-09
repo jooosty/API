@@ -160,6 +160,11 @@ label {
 
 /* ── Track canvas ────────────────────────────────────────────── */
 
+.track-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
 #track-container {
     width: 800px;
     height: 600px;
@@ -191,15 +196,36 @@ label {
     cursor: pointer;
 }
 
-/* ── Interval tower ──────────────────────────────────────────── */
+/* ── Interval tower (overlaid on canvas left) ────────────────── */
 
 #interval-tower {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 160px;
+    height: 600px;
+    background: rgba(14, 14, 14, 0.82);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border-right: 1px solid var(--border);
+    border-radius: var(--radius) 0 0 var(--radius);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 8px 0;
+    overflow: hidden;
+    z-index: 10;
+}
+
+/* ── Live lap tower (outside, right of canvas) ───────────────── */
+
+#live-lap-tower {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     color: #fff;
-    width: 220px;
-    min-height: 600px;
+    width: 190px;
+    height: 600px;
     font-family: var(--mono);
     font-size: 13px;
     padding: 8px 0;
@@ -228,6 +254,13 @@ label {
 
 #interval-rows {
     padding: 0 4px;
+    overflow-y: auto;
+    max-height: calc(600px - 48px);
+    scrollbar-width: none;
+}
+
+#interval-rows::-webkit-scrollbar {
+    display: none;
 }
 
 .tower-empty {

@@ -19,18 +19,24 @@
     <button id="play-pause-button" disabled>Pause</button>
 </div>
 <div class="visualiser-layout">
-    <div>
+    <div class="track-wrap">
         <div id="track-container"></div>
+        <div id="interval-tower">
+            <div class="tower-header">Intervals</div>
+            <div id="phase-indicator"></div>
+            <div id="interval-rows">
+                <div class="tower-empty">Load track to show</div>
+            </div>
+        </div>
         <div class="timeline-row">
             <span id="time-display">0:00</span>
             <input type="range" id="timeline-scrubber" min="0" max="1000" value="0" disabled />
             <span id="time-total"></span>
         </div>
     </div>
-    <div id="interval-tower">
-        <div class="tower-header">Intervals</div>
-        <div id="phase-indicator"></div>
-        <div id="interval-rows">
+    <div id="live-lap-tower">
+        <div class="tower-header">On Lap</div>
+        <div id="live-lap-rows">
             <div class="tower-empty">Load track to show</div>
         </div>
     </div>
@@ -43,6 +49,7 @@
     import { updatePracticeTower }   from '../scripts/tower-practice.js';
     import { updateQualifyingTower } from '../scripts/tower-qualifying.js';
     import { updateRaceTower }       from '../scripts/tower-race.js';
+    import { updateLiveLapTower }    from '../scripts/tower-live-lap.js';
 
     // ── Scene setup ───────────────────────────────────────────
     const scene = new THREE.Scene();
@@ -182,6 +189,7 @@
         let allIntervalData    = [];
         let allPositionData    = [];
         let allLapData         = [];
+        let allStintData       = [];
         let qualPhaseBoundaries = [];
         const dnfDrivers = new Set();
 
@@ -190,10 +198,18 @@
             const lapRaw = await apiFetch(`${BASE_URL}/laps?session_key=${sessionKey}`);
             allLapData = Array.isArray(lapRaw) ? lapRaw : [];
 
+            setLoadingText('Fetching stints...');
+            const stintRaw = await apiFetch(`${BASE_URL}/stints?session_key=${sessionKey}`);
+            allStintData = Array.isArray(stintRaw) ? stintRaw : [];
+
         } else if (isQualifying) {
             setLoadingText('Fetching lap times...');
             const lapRaw = await apiFetch(`${BASE_URL}/laps?session_key=${sessionKey}`);
             allLapData = Array.isArray(lapRaw) ? lapRaw : [];
+
+            setLoadingText('Fetching stints...');
+            const stintRaw = await apiFetch(`${BASE_URL}/stints?session_key=${sessionKey}`);
+            allStintData = Array.isArray(stintRaw) ? stintRaw : [];
 
             setLoadingText('Fetching race control...');
             const rcRaw  = await apiFetch(`${BASE_URL}/race_control?session_key=${sessionKey}`);
@@ -360,6 +376,12 @@
             } else {
                 if (phaseEl) phaseEl.textContent = '';
                 updateRaceTower(t, intervalRows, allIntervalData, allPositionData, driverInfoMap, dnfDrivers);
+            }
+
+            // Live lap tower — practice & qualifying only
+            if (isPractice || isQualifying) {
+                const liveRows = document.getElementById('live-lap-rows');
+                if (liveRows) updateLiveLapTower(t, liveRows, allLapData, allStintData, driverInfoMap);
             }
         }
 
