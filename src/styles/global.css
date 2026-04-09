@@ -196,6 +196,129 @@ label {
     cursor: pointer;
 }
 
+/* ── Team radio popup ────────────────────────────────────────── */
+
+.radio-popup {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 210px;
+    background: rgba(14, 14, 14, 0.92);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid var(--border-hi);
+    border-radius: var(--radius);
+    font-family: var(--mono);
+    z-index: 20;
+    overflow: hidden;
+    animation: radio-slide-in 0.2s ease;
+}
+
+.radio-popup.hidden {
+    display: none;
+}
+
+@keyframes radio-slide-in {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.radio-popup-header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 10px 6px;
+    border-bottom: 1px solid var(--border);
+}
+
+.radio-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.radio-acronym {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.05em;
+}
+
+.radio-live-badge {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: #2a0a0a;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    margin-left: 2px;
+}
+
+.radio-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 11px;
+    padding: 2px 4px;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.radio-close:hover {
+    color: var(--text);
+    background: none;
+}
+
+.radio-popup-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+}
+
+.radio-play-btn {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 4px 10px;
+    flex-shrink: 0;
+    border-color: var(--border-hi);
+}
+
+.radio-play-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--bg-input);
+}
+
+.radio-progress-wrap {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.radio-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.25s linear;
+}
+
+.radio-time {
+    font-size: 10px;
+    color: var(--text-muted);
+    min-width: 28px;
+    text-align: right;
+}
+
 /* ── Weather overlay (bottom-right of canvas) ────────────────── */
 
 #weather-overlay {

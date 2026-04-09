@@ -35,6 +35,21 @@
             <span id="wx-wind">—</span><span class="wx-label">WND</span>
             <span id="wx-rain" class="wx-rain-badge">DRY</span>
         </div>
+        <div id="radio-popup" class="radio-popup hidden">
+            <div class="radio-popup-header">
+                <span id="radio-dot" class="radio-dot"></span>
+                <span id="radio-acronym" class="radio-acronym"></span>
+                <span class="radio-live-badge">RADIO</span>
+                <button id="radio-close" class="radio-close">✕</button>
+            </div>
+            <div class="radio-popup-controls">
+                <button id="radio-play-btn" class="radio-play-btn">▶ Play</button>
+                <div class="radio-progress-wrap">
+                    <div id="radio-progress-bar" class="radio-progress-bar"></div>
+                </div>
+                <span id="radio-time" class="radio-time">0:00</span>
+            </div>
+        </div>
         <div class="timeline-row">
             <span id="time-display">0:00</span>
             <input type="range" id="timeline-scrubber" min="0" max="1000" value="0" disabled />
@@ -198,6 +213,7 @@
         let allLapData         = [];
         let allStintData       = [];
         let allWeatherData     = [];
+        let allRadioData       = [];
         let qualPhaseBoundaries = [];
         const dnfDrivers = new Set();
 
@@ -254,6 +270,13 @@
         setLoadingText('Fetching weather...');
         const wxRaw = await apiFetch(`${BASE_URL}/weather?session_key=${sessionKey}`);
         allWeatherData = Array.isArray(wxRaw) ? wxRaw.sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
+
+        // ── Fetch team radio (all session types) ──────────────
+        setLoadingText('Fetching team radio...');
+        const radioRaw = await apiFetch(`${BASE_URL}/team_radio?session_key=${sessionKey}`);
+        allRadioData = Array.isArray(radioRaw)
+            ? radioRaw.sort((a, b) => new Date(a.date) - new Date(b.date))
+            : [];
 
         // ── Driver info map ───────────────────────────────────
         const driverInfoMap = {};
@@ -409,6 +432,98 @@
             }
         }
 
+        // ── Team radio popup ──────────────────────────────────
+        let radioIndex       = 0;   // next unplayed entry index
+        let currentAudio     = null;
+        let dismissTimer     = null;
+        let lastRadioSimTime = -Infinity; // track scrubbing resets
+
+        const radioPopup    = document.getElementById('radio-popup');
+        const radioDot      = document.getElementById('radio-dot');
+        const radioAcronym  = document.getElementById('radio-acronym');
+        const radioPlayBtn  = document.getElementById('radio-play-btn');
+        const radioProgress = document.getElementById('radio-progress-bar');
+        const radioTimeEl   = document.getElementById('radio-time');
+        const radioClose    = document.getElementById('radio-close');
+
+        function fmtAudioTime(sec) {
+            const m = Math.floor(sec / 60);
+            const s = Math.floor(sec % 60);
+            return `${m}:${String(s).padStart(2, '0')}`;
+        }
+
+        function dismissRadio() {
+            if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+            if (dismissTimer) { clearTimeout(dismissTimer); dismissTimer = null; }
+            if (radioPopup) radioPopup.classList.add('hidden');
+        }
+
+        function showRadioPopup(entry) {
+            const info = driverInfoMap[entry.driver_number] || { acronym: '#' + entry.driver_number, colour: '#fff' };
+
+            radioDot.style.background    = info.colour;
+            radioAcronym.textContent     = info.acronym;
+            radioProgress.style.width    = '0%';
+            radioTimeEl.textContent      = '0:00';
+            radioPlayBtn.textContent     = '▶ Play';
+
+            // Stop any previous audio
+            if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+
+            const audio = new Audio(entry.recording_url);
+            currentAudio = audio;
+
+            audio.addEventListener('timeupdate', () => {
+                if (!audio.duration) return;
+                radioProgress.style.width = (audio.currentTime / audio.duration * 100) + '%';
+                radioTimeEl.textContent   = fmtAudioTime(audio.currentTime);
+            });
+            audio.addEventListener('ended', () => {
+                radioPlayBtn.textContent = '▶ Play';
+                radioProgress.style.width = '100%';
+                // Auto-dismiss 3s after audio ends
+                dismissTimer = setTimeout(dismissRadio, 3000);
+            });
+            audio.addEventListener('play',  () => { radioPlayBtn.textContent = '⏸ Pause'; });
+            audio.addEventListener('pause', () => { radioPlayBtn.textContent = '▶ Play'; });
+
+            radioPlayBtn.onclick = () => {
+                if (audio.paused) audio.play();
+                else audio.pause();
+            };
+
+            radioPopup.classList.remove('hidden');
+            audio.play().catch(() => {}); // autoplay may be blocked — user can click play
+
+            // Auto-dismiss after 15s even if not played
+            if (dismissTimer) clearTimeout(dismissTimer);
+            dismissTimer = setTimeout(dismissRadio, 15000);
+        }
+
+        radioClose?.addEventListener('click', dismissRadio);
+
+        function checkRadio(t) {
+            // If sim time jumped backwards (scrubbing), reset index
+            if (t < lastRadioSimTime - 5000) {
+                radioIndex = 0;
+                dismissRadio();
+            }
+            lastRadioSimTime = t;
+
+            // Advance index past any entries that have already fired
+            while (radioIndex < allRadioData.length) {
+                const entry = allRadioData[radioIndex];
+                const entryT = new Date(entry.date).getTime();
+                if (entryT <= t) {
+                    showRadioPopup(entry);
+                    radioIndex++;
+                    break; // show one at a time; next tick will catch up if needed
+                } else {
+                    break;
+                }
+            }
+        }
+
         // ── Tower dispatch ────────────────────────────────────
         function updateIntervalTower(t) {
             const intervalRows = document.getElementById('interval-rows');
@@ -437,6 +552,7 @@
             }
 
             updateWeather(t);
+            checkRadio(t);
         }
 
         // ── Stationary detection ──────────────────────────────
@@ -471,6 +587,7 @@
         timelineScrubber.addEventListener('mousedown', () => {
             isScrubbing = true; isPlaying = false; lastRealTime = null;
             document.getElementById('play-pause-button').textContent = 'Play';
+            dismissRadio();
         });
         timelineScrubber.addEventListener('input', () => {
             simulatedTime = earliestTime + (Number(timelineScrubber.value) / 1000) * totalDuration;
