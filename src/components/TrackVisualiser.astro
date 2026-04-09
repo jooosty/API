@@ -28,6 +28,13 @@
                 <div class="tower-empty">Load track to show</div>
             </div>
         </div>
+        <div id="weather-overlay">
+            <span id="wx-track">—</span><span class="wx-label">TRK</span>
+            <span id="wx-air">—</span><span class="wx-label">AIR</span>
+            <span id="wx-humid">—</span><span class="wx-label">HUM</span>
+            <span id="wx-wind">—</span><span class="wx-label">WND</span>
+            <span id="wx-rain" class="wx-rain-badge">DRY</span>
+        </div>
         <div class="timeline-row">
             <span id="time-display">0:00</span>
             <input type="range" id="timeline-scrubber" min="0" max="1000" value="0" disabled />
@@ -190,6 +197,7 @@
         let allPositionData    = [];
         let allLapData         = [];
         let allStintData       = [];
+        let allWeatherData     = [];
         let qualPhaseBoundaries = [];
         const dnfDrivers = new Set();
 
@@ -241,6 +249,11 @@
             const sessionResultData = Array.isArray(sessionResultRaw) ? sessionResultRaw : [];
             sessionResultData.filter(r => r.dnf || r.dns || r.dsq).forEach(r => dnfDrivers.add(r.driver_number));
         }
+
+        // ── Fetch weather (all session types) ────────────────
+        setLoadingText('Fetching weather...');
+        const wxRaw = await apiFetch(`${BASE_URL}/weather?session_key=${sessionKey}`);
+        allWeatherData = Array.isArray(wxRaw) ? wxRaw.sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
 
         // ── Driver info map ───────────────────────────────────
         const driverInfoMap = {};
@@ -362,6 +375,40 @@
 
         timeTotal.textContent = formatTime(totalDuration);
 
+        // ── Weather overlay ───────────────────────────────────
+        function updateWeather(t) {
+            if (allWeatherData.length === 0) return;
+
+            // Find the latest weather reading at or before t
+            let wx = allWeatherData[0];
+            for (const entry of allWeatherData) {
+                if (new Date(entry.date).getTime() <= t) wx = entry;
+                else break;
+            }
+
+            const windDir = typeof wx.wind_direction === 'number'
+                ? ['N','NE','E','SE','S','SW','W','NW'][Math.round(wx.wind_direction / 45) % 8]
+                : '—';
+
+            document.getElementById('wx-track').textContent =
+                wx.track_temperature != null ? wx.track_temperature.toFixed(1) + '°' : '—';
+            document.getElementById('wx-air').textContent =
+                wx.air_temperature != null ? wx.air_temperature.toFixed(1) + '°' : '—';
+            document.getElementById('wx-humid').textContent =
+                wx.humidity != null ? wx.humidity.toFixed(0) + '%' : '—';
+            document.getElementById('wx-wind').textContent =
+                wx.wind_speed != null ? wx.wind_speed.toFixed(1) + ' ' + windDir : '—';
+
+            const rainEl = document.getElementById('wx-rain');
+            if (rainEl) {
+                const raining = wx.rainfall === true || wx.rainfall === 1;
+                rainEl.textContent = raining ? 'WET' : 'DRY';
+                rainEl.style.background = raining ? '#1a3a5c' : '#1a2a1a';
+                rainEl.style.color      = raining ? '#4a9eff' : '#4caf50';
+                rainEl.style.borderColor = raining ? '#4a9eff' : '#4caf50';
+            }
+        }
+
         // ── Tower dispatch ────────────────────────────────────
         function updateIntervalTower(t) {
             const intervalRows = document.getElementById('interval-rows');
@@ -380,9 +427,16 @@
 
             // Live lap tower — practice & qualifying only
             if (isPractice || isQualifying) {
+                const liveTower = document.getElementById('live-lap-tower');
+                if (liveTower) liveTower.style.display = 'block';
                 const liveRows = document.getElementById('live-lap-rows');
                 if (liveRows) updateLiveLapTower(t, liveRows, allLapData, allStintData, driverInfoMap);
+            } else {
+                const liveTower = document.getElementById('live-lap-tower');
+                if (liveTower) liveTower.style.display = 'none';
             }
+
+            updateWeather(t);
         }
 
         // ── Stationary detection ──────────────────────────────
