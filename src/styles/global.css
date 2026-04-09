@@ -238,7 +238,70 @@ label {
     letter-spacing: 0.06em;
 }
 
+/* ── Visualiser wrapper ──────────────────────────────────────── */
+
+.visualiser-wrapper.hidden {
+    display: none;
+}
+
 /* ── Race Calendar ───────────────────────────────────────────── */
+
+/* Hero state — before any session is selected */
+#calendar-section {
+    padding: 48px 0 40px;
+    transition: padding 0.4s ease;
+}
+
+.calendar-hero-intro {
+    text-align: center;
+    margin-bottom: 40px;
+    transition: max-height 0.4s ease, opacity 0.35s ease, margin 0.4s ease;
+    max-height: 200px;
+    overflow: hidden;
+    opacity: 1;
+}
+
+.calendar-hero-intro h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.03em;
+    margin-bottom: 10px;
+    line-height: 1.2;
+}
+
+.calendar-hero-intro h1 span {
+    color: var(--accent);
+}
+
+.calendar-hero-intro p {
+    font-size: 13px;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+}
+
+.calendar-hero-intro .hero-arrow {
+    margin-top: 20px;
+    font-size: 20px;
+    color: var(--accent);
+    animation: bounce 1.4s ease-in-out infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(6px); }
+}
+
+/* Collapsed state after a session is loaded */
+#calendar-section.session-selected {
+    padding: 16px 0;
+}
+
+#calendar-section.session-selected .calendar-hero-intro {
+    max-height: 0;
+    opacity: 0;
+    margin-bottom: 0;
+}
 
 .calendar-toolbar {
     display: flex;

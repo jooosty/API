@@ -9,8 +9,22 @@ import '../styles/global.css';
         <title>F1 Explorer</title>
     </head>
     <body>
-        <TrackVisualiser />
-        <hr />
+        <div id="visualiser-wrapper" class="visualiser-wrapper hidden">
+            <TrackVisualiser />
+            <hr />
+        </div>
+
         <RaceCalendar />
+
+        <script>
+            window.addEventListener('session-changed', () => {
+                const wrapper = document.getElementById('visualiser-wrapper');
+                if (wrapper) wrapper.classList.remove('hidden');
+
+                // collapse the calendar hero once a session is picked
+                const calSection = document.getElementById('calendar-section');
+                if (calSection) calSection.classList.add('session-selected');
+            });
+        </script>
     </body>
 </html>
