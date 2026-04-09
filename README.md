@@ -41,6 +41,7 @@
 - updated race calender
 - added sector times
 - added weather
+- added radio
 
 ### How long did it take
 - 2 hours for track selection
@@ -52,6 +53,7 @@
 - 2 hours for race calendar
 - 1 hour for sector times
 - 1 hour for weather
+- 1 hour for radio
 
 ### What did i learn
 - I learned how to split a larger project into smaller files and keep the code easier to maintain
