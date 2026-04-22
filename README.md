@@ -64,6 +64,53 @@
 - I learned that updating and refining features (like the race calendar) improves usability over time
 
 
+## 22/23 april 2026
+
+### What did i do
+- made load time faster
+- fixed audio
+- fixed loading screen
+- added pit tower
+- added team car to side of interval
+- added driver headshots to car dots
+- added overtakes tower
+- added car telemetry popup
+- split files
+- added race control tower
+- added lines behind cars to show where they have been
+- added pinning camera to a driver
+- made previous session delete itself when new session is loaded
+- added driver comparision mode
+
+### How long did it take
+- 2 hours
+- 1 hour
+- 1 hour
+- 2 hours
+- 1 hour
+- 1 hour
+- 2 hours
+- 1 hour
+- 1 hour
+- 1 hour
+- 1 hour
+- 1 hour
+- 1 hour
+- 1 hour
+
+### What did i learn
+- I learned how to optimize load times by only fetching necessary data and using caching where possible
+- I learned how to implement audio playback and controls for team radios
+- I learned how to create a dynamic loading screen that updates with progress
+- I learned how to build a pit stop tower that shows pit stop details and timings
+- I learned how to enhance the interval tower by adding team cars and driver headshots for better visual identification
+- I learned how to create an overtakes tower that tracks position changes throughout the session
+- I learned how to build a car telemetry popup that shows live data like speed, throttle, and brake status when clicking on a driver dot
+- I learned how to implement a race control tower that displays important messages and flags during the session
+- I learned how to add motion trails behind cars to visualize their recent path on the track
+- I learned how to implement a camera system that can be pinned to a specific driver for a focused view of their performance
+- I learned how to manage state and cleanup when switching between sessions to prevent memory leaks and ensure a smooth user experience
+- I learned how to create a driver comparison mode that allows users to select two drivers and compare their lap times, sector times, and telemetry data side by side for deeper analysis
 
 
 
