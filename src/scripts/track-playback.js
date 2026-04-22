@@ -115,13 +115,8 @@ export function setupPlayback({ scene, camera, renderer, driverDots, allDriverLo
         }
 
         if (isPractice || isQualifying) {
-            const liveTower = document.getElementById('live-lap-tower');
-            if (liveTower) liveTower.style.display = 'block';
             const liveRows = document.getElementById('live-lap-rows');
             if (liveRows) updateLiveLapTower(t, liveRows, allLapData, allStintData, driverInfoMap);
-        } else {
-            const liveTower = document.getElementById('live-lap-tower');
-            if (liveTower) liveTower.style.display = 'none';
         }
 
         updateWeather(t, allWeatherData);

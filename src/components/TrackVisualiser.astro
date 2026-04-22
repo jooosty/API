@@ -21,7 +21,7 @@
 <div class="visualiser-layout">
     <div class="track-wrap">
         <div id="track-container"></div>
-        <div id="interval-tower">
+        <div id="interval-tower" style="display:none;">
             <div class="tower-header" style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;">
                 <span>Intervals</span>
                 <span id="lap-counter" style="font-size:10px;color:#f0c040;font-family:var(--mono);letter-spacing:0.06em;"></span>
@@ -66,31 +66,31 @@
             <span id="time-total"></span>
         </div>
     </div>
-    <div id="live-lap-tower">
+    <div id="live-lap-tower" style="display:none;">
         <div class="tower-header">On Lap</div>
         <div id="live-lap-rows">
             <div class="tower-empty">Load track to show</div>
         </div>
     </div>
-    <div id="pit-tower">
+    <div id="pit-tower" style="display:none;">
         <div class="tower-header">Pit Stops</div>
         <div id="pit-tower-rows">
             <div class="tower-empty">Load track to show</div>
         </div>
     </div>
-    <div id="overtake-tower">
+    <div id="overtake-tower" style="display:none;">
         <div class="tower-header">Overtakes</div>
         <div id="overtake-rows">
             <div class="tower-empty">Load track to show</div>
         </div>
     </div>
-    <div id="race-control-tower">
+    <div id="race-control-tower" style="display:none;">
         <div class="tower-header">Race Control</div>
         <div id="race-control-rows">
             <div class="tower-empty">Load track to show</div>
         </div>
     </div>
-    <div id="comparison-panel">
+    <div id="comparison-panel" style="display:none;">
         <div class="tower-header" style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;"><span>Comparison</span><span style="font-size:8px;color:#444;letter-spacing:0.04em;">right-click driver</span></div>
         <div id="comparison-rows">
             <div class="comp-empty">Right-click a driver to compare</div>
@@ -205,11 +205,20 @@
         );
 
         // ── Playback ──────────────────────────────────────────
-        // Hide towers that only apply to races
-        const pitTower      = document.getElementById('pit-tower');
-        const overtakeTower = document.getElementById('overtake-tower');
-        if (pitTower)      pitTower.style.display      = (isPractice || isQualifying) ? 'none' : '';
-        if (overtakeTower) overtakeTower.style.display = (isPractice || isQualifying) ? 'none' : '';
+        // Show the right towers for this session type
+        const isRace = !isPractice && !isQualifying;
+        const towerVisibility = {
+            'interval-tower':     true,
+            'live-lap-tower':     isPractice || isQualifying,
+            'pit-tower':          isRace,
+            'overtake-tower':     isRace,
+            'race-control-tower': true,
+            'comparison-panel':   true,
+        };
+        for (const [id, show] of Object.entries(towerVisibility)) {
+            const el = document.getElementById(id);
+            if (el) el.style.display = show ? '' : 'none';
+        }
 
         // ── Session comparison ───────────────────────────────
         const comparison = setupComparison(towerData.allLapData, towerData.allStintData, driverInfoMap);
