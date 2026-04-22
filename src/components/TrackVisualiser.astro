@@ -62,6 +62,12 @@
             <div class="tower-empty">Load track to show</div>
         </div>
     </div>
+    <div id="pit-tower">
+        <div class="tower-header">Pit Stops</div>
+        <div id="pit-tower-rows">
+            <div class="tower-empty">Load track to show</div>
+        </div>
+    </div>
 </div>
 </div>
 
@@ -72,6 +78,7 @@
     import { updateQualifyingTower } from '../scripts/tower-qualifying.js';
     import { updateRaceTower }       from '../scripts/tower-race.js';
     import { updateLiveLapTower }    from '../scripts/tower-live-lap.js';
+    import { buildPitTowerState, updatePitTower } from '../scripts/tower-pit.js';
 
     // ── Scene setup ───────────────────────────────────────────
     const scene = new THREE.Scene();
@@ -212,6 +219,7 @@
         let allPositionData    = [];
         let allLapData         = [];
         let allStintData       = [];
+        let allPitData         = [];
         let allWeatherData     = [];
         let allRadioData       = [];
         let qualPhaseBoundaries = [];
@@ -226,6 +234,10 @@
             const stintRaw = await apiFetch(`${BASE_URL}/stints?session_key=${sessionKey}`);
             allStintData = Array.isArray(stintRaw) ? stintRaw : [];
 
+            setLoadingText('Fetching pit stops...');
+            const pitRaw = await apiFetch(`${BASE_URL}/pit?session_key=${sessionKey}`);
+            allPitData = Array.isArray(pitRaw) ? pitRaw.sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
+
         } else if (isQualifying) {
             setLoadingText('Fetching lap times...');
             const lapRaw = await apiFetch(`${BASE_URL}/laps?session_key=${sessionKey}`);
@@ -234,6 +246,10 @@
             setLoadingText('Fetching stints...');
             const stintRaw = await apiFetch(`${BASE_URL}/stints?session_key=${sessionKey}`);
             allStintData = Array.isArray(stintRaw) ? stintRaw : [];
+
+            setLoadingText('Fetching pit stops...');
+            const pitRaw = await apiFetch(`${BASE_URL}/pit?session_key=${sessionKey}`);
+            allPitData = Array.isArray(pitRaw) ? pitRaw.sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
 
             setLoadingText('Fetching race control...');
             const rcRaw  = await apiFetch(`${BASE_URL}/race_control?session_key=${sessionKey}`);
@@ -264,6 +280,14 @@
             const sessionResultRaw  = await apiFetch(`${BASE_URL}/session_result?session_key=${sessionKey}`);
             const sessionResultData = Array.isArray(sessionResultRaw) ? sessionResultRaw : [];
             sessionResultData.filter(r => r.dnf || r.dns || r.dsq).forEach(r => dnfDrivers.add(r.driver_number));
+
+            setLoadingText('Fetching pit stops...');
+            const pitRaw = await apiFetch(`${BASE_URL}/pit?session_key=${sessionKey}`);
+            allPitData = Array.isArray(pitRaw) ? pitRaw.sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
+
+            setLoadingText('Fetching stints...');
+            const stintRaw = await apiFetch(`${BASE_URL}/stints?session_key=${sessionKey}`);
+            allStintData = Array.isArray(stintRaw) ? stintRaw : [];
         }
 
         // ── Fetch weather (all session types) ────────────────
@@ -555,6 +579,14 @@
             }
         }
 
+        // ── Pit tower ─────────────────────────────────────────
+        const stintsByDriver = buildPitTowerState(allStintData);
+
+        function checkPit(t) {
+            const pitRows = document.getElementById('pit-tower-rows');
+            updatePitTower(t, pitRows, allPitData, stintsByDriver, driverInfoMap);
+        }
+
         // ── Tower dispatch ────────────────────────────────────
         function updateIntervalTower(t) {
             const intervalRows = document.getElementById('interval-rows');
@@ -584,6 +616,7 @@
 
             updateWeather(t);
             checkRadio(t);
+            checkPit(t);
         }
 
         // ── Stationary detection ──────────────────────────────
