@@ -811,3 +811,30 @@ label {
 #pit-tower-rows::-webkit-scrollbar {
     display: none;
 }
+
+/* ── Overtakes tower ─────────────────────────────────────────── */
+
+#overtake-tower {
+    width: 150px;
+    height: 600px;
+    background: rgba(14, 14, 14, 0.82);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 8px 0;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+#overtake-rows {
+    padding: 0 4px;
+    overflow-y: auto;
+    max-height: calc(600px - 32px);
+    scrollbar-width: none;
+}
+
+#overtake-rows::-webkit-scrollbar {
+    display: none;
+}

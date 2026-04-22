@@ -22,7 +22,10 @@
     <div class="track-wrap">
         <div id="track-container"></div>
         <div id="interval-tower">
-            <div class="tower-header">Intervals</div>
+            <div class="tower-header" style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;">
+                <span>Intervals</span>
+                <span id="lap-counter" style="font-size:10px;color:#f0c040;font-family:var(--mono);letter-spacing:0.06em;"></span>
+            </div>
             <div id="phase-indicator"></div>
             <div id="interval-rows">
                 <div class="tower-empty">Load track to show</div>
@@ -68,6 +71,12 @@
             <div class="tower-empty">Load track to show</div>
         </div>
     </div>
+    <div id="overtake-tower">
+        <div class="tower-header">Overtakes</div>
+        <div id="overtake-rows">
+            <div class="tower-empty">Load track to show</div>
+        </div>
+    </div>
 </div>
 </div>
 
@@ -79,6 +88,7 @@
     import { updateRaceTower }       from '../scripts/tower-race.js';
     import { updateLiveLapTower }    from '../scripts/tower-live-lap.js';
     import { buildPitTowerState, updatePitTower } from '../scripts/tower-pit.js';
+    import { updateOvertakeTower } from '../scripts/tower-overtakes.js';
     import { teamLogoUrl } from '../scripts/tower-base.js';
 
     // ── Scene setup ───────────────────────────────────────────
@@ -221,6 +231,7 @@
         let allLapData         = [];
         let allStintData       = [];
         let allPitData         = [];
+        let allOvertakeData    = [];
         let allWeatherData     = [];
         let allRadioData       = [];
         let qualPhaseBoundaries = [];
@@ -235,6 +246,10 @@
             const stintRaw = await apiFetch(`${BASE_URL}/stints?session_key=${sessionKey}`);
             allStintData = Array.isArray(stintRaw) ? stintRaw : [];
 
+            setLoadingText('Fetching lap times...');
+            const lapRaceRaw = await apiFetch(`${BASE_URL}/laps?session_key=${sessionKey}`);
+            allLapData = Array.isArray(lapRaceRaw) ? lapRaceRaw : [];
+
             setLoadingText('Fetching pit stops...');
             const pitRaw = await apiFetch(`${BASE_URL}/pit?session_key=${sessionKey}`);
             allPitData = Array.isArray(pitRaw) ? pitRaw.sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
@@ -247,6 +262,10 @@
             setLoadingText('Fetching stints...');
             const stintRaw = await apiFetch(`${BASE_URL}/stints?session_key=${sessionKey}`);
             allStintData = Array.isArray(stintRaw) ? stintRaw : [];
+
+            setLoadingText('Fetching lap times...');
+            const lapRaceRaw = await apiFetch(`${BASE_URL}/laps?session_key=${sessionKey}`);
+            allLapData = Array.isArray(lapRaceRaw) ? lapRaceRaw : [];
 
             setLoadingText('Fetching pit stops...');
             const pitRaw = await apiFetch(`${BASE_URL}/pit?session_key=${sessionKey}`);
@@ -282,6 +301,10 @@
             const sessionResultData = Array.isArray(sessionResultRaw) ? sessionResultRaw : [];
             sessionResultData.filter(r => r.dnf || r.dns || r.dsq).forEach(r => dnfDrivers.add(r.driver_number));
 
+            setLoadingText('Fetching lap times...');
+            const lapRaceRaw = await apiFetch(`${BASE_URL}/laps?session_key=${sessionKey}`);
+            allLapData = Array.isArray(lapRaceRaw) ? lapRaceRaw : [];
+
             setLoadingText('Fetching pit stops...');
             const pitRaw = await apiFetch(`${BASE_URL}/pit?session_key=${sessionKey}`);
             allPitData = Array.isArray(pitRaw) ? pitRaw.sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
@@ -289,6 +312,10 @@
             setLoadingText('Fetching stints...');
             const stintRaw = await apiFetch(`${BASE_URL}/stints?session_key=${sessionKey}`);
             allStintData = Array.isArray(stintRaw) ? stintRaw : [];
+
+            setLoadingText('Fetching overtakes...');
+            const overtakeRaw = await apiFetch(`${BASE_URL}/overtakes?session_key=${sessionKey}`);
+            allOvertakeData = Array.isArray(overtakeRaw) ? overtakeRaw.sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
         }
 
         // ── Fetch weather (all session types) ────────────────
@@ -641,19 +668,41 @@
             updatePitTower(t, pitRows, allPitData, stintsByDriver, driverInfoMap);
         }
 
+        function checkOvertakes(t) {
+            const overtakeRows = document.getElementById('overtake-rows');
+            updateOvertakeTower(t, overtakeRows, allOvertakeData, driverInfoMap, allLapData);
+        }
+
         // ── Tower dispatch ────────────────────────────────────
         function updateIntervalTower(t) {
             const intervalRows = document.getElementById('interval-rows');
             if (!intervalRows) return;
-            const phaseEl = document.getElementById('phase-indicator');
+            const phaseEl   = document.getElementById('phase-indicator');
+            const lapCounterEl = document.getElementById('lap-counter');
 
             if (isPractice) {
                 if (phaseEl) phaseEl.textContent = '';
+                if (lapCounterEl) lapCounterEl.textContent = '';
                 updatePracticeTower(t, intervalRows, allLapData, driverInfoMap);
             } else if (isQualifying) {
+                if (lapCounterEl) lapCounterEl.textContent = '';
                 updateQualifyingTower(t, intervalRows, allLapData, qualPhaseBoundaries, driverInfoMap);
             } else {
                 if (phaseEl) phaseEl.textContent = '';
+                // Derive current lap: highest completed lap_number at or before t
+                if (lapCounterEl && allLapData.length > 0) {
+                    const completedLaps = allLapData.filter(l => {
+                        if (!l.date_start || !l.lap_duration) return false;
+                        return new Date(l.date_start).getTime() + l.lap_duration * 1000 <= t;
+                    });
+                    const currentLap = completedLaps.length > 0
+                        ? Math.max(...completedLaps.map(l => l.lap_number))
+                        : 0;
+                    const totalLaps = Math.max(...allLapData.map(l => l.lap_number || 0));
+                    lapCounterEl.textContent = currentLap > 0
+                        ? `L${currentLap}${totalLaps > 0 ? '/' + totalLaps : ''}`
+                        : '';
+                }
                 updateRaceTower(t, intervalRows, allIntervalData, allPositionData, driverInfoMap, dnfDrivers, allStintData);
             }
 
@@ -671,6 +720,7 @@
             updateWeather(t);
             checkRadio(t);
             checkPit(t);
+            checkOvertakes(t);
         }
 
         // ── Stationary detection ──────────────────────────────
