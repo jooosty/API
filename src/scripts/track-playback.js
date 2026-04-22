@@ -116,8 +116,10 @@ export function setupPlayback({ scene, camera, renderer, driverDots, allDriverLo
 
         updateWeather(t, allWeatherData);
         radio.check(t, allRadioData);
-        updatePitTower(t, document.getElementById('pit-tower-rows'), allPitData, stintsByDriver, driverInfoMap);
-        updateOvertakeTower(t, document.getElementById('overtake-rows'), allOvertakeData, driverInfoMap, allLapData);
+        if (!isPractice && !isQualifying) {
+            updatePitTower(t, document.getElementById('pit-tower-rows'), allPitData, stintsByDriver, driverInfoMap);
+            updateOvertakeTower(t, document.getElementById('overtake-rows'), allOvertakeData, driverInfoMap, allLapData);
+        }
         updateRaceControlTower(t, document.getElementById('race-control-rows'), allRaceControlData, driverInfoMap);
         telemetry.update(t);
     }

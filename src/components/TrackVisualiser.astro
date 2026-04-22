@@ -185,6 +185,8 @@
         function exitFocus() {
             focusBadge.style.display = 'none';
             cameraCtrl.unfocus();
+            // Also deselect telemetry if it was opened by focus mode
+            if (telemetry.getSelectedDriver() !== null) telemetry.select(telemetry.getSelectedDriver());
         }
 
         focusExit.addEventListener('click', exitFocus);
@@ -196,6 +198,12 @@
         );
 
         // ── Playback ──────────────────────────────────────────
+        // Hide towers that only apply to races
+        const pitTower      = document.getElementById('pit-tower');
+        const overtakeTower = document.getElementById('overtake-tower');
+        if (pitTower)      pitTower.style.display      = (isPractice || isQualifying) ? 'none' : '';
+        if (overtakeTower) overtakeTower.style.display = (isPractice || isQualifying) ? 'none' : '';
+
         currentPlayback = setupPlayback({
             scene, camera, renderer,
             driverDots, allDriverLocationData,
