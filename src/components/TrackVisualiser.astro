@@ -501,7 +501,7 @@
             // Stop any previous audio
             if (currentAudio) { currentAudio.pause(); currentAudio = null; }
 
-            const audio = new Audio(entry.recording_url);
+            const audio = new Audio(entry.recording_url + '?_=' + Date.now());
             currentAudio = audio;
 
             audio.addEventListener('timeupdate', () => {
