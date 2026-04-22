@@ -18,7 +18,7 @@ const COMPOUND_SHORT = {
     WET:          'WET',
 };
 
-export function updateRaceTower(currentSimTime, intervalRows, allIntervalData, allPositionData, driverInfoMap, dnfDrivers, allStintData = []) {
+export function updateRaceTower(currentSimTime, intervalRows, allIntervalData, allPositionData, driverInfoMap, dnfDrivers, allStintData = [], selectedDriverNum = null, onDriverClick = null) {
     if (allIntervalData.length === 0) return;
 
     const latestInterval = {};
@@ -41,7 +41,6 @@ export function updateRaceTower(currentSimTime, intervalRows, allIntervalData, a
         }
     }
 
-    // Current tyre per driver: latest stint for that driver
     const currentTyre = {};
     if (allStintData.length > 0) {
         const byDriver = {};
@@ -70,6 +69,7 @@ export function updateRaceTower(currentSimTime, intervalRows, allIntervalData, a
         const intervalEntry = latestInterval[dn];
         const info     = driverInfoMap[dn] || { acronym: '#' + dn, colour: '#fff' };
         const isLeader = i === 0;
+        const isSelected = dn === selectedDriverNum;
         const gapRaw   = intervalEntry?.gap_to_leader;
         const ivlRaw   = intervalEntry?.interval;
 
@@ -96,7 +96,6 @@ export function updateRaceTower(currentSimTime, intervalRows, allIntervalData, a
             position:    i + 1,
             colour:      info.colour,
             acronym:     info.acronym,
-            // Interval tower uses team logo; headshot stays null here so logo shows
             teamLogoUrl: info.teamLogoUrl || null,
             headshotUrl: null,
             mainText:    intervalText,
@@ -105,14 +104,23 @@ export function updateRaceTower(currentSimTime, intervalRows, allIntervalData, a
             subColor:    '#555',
         });
 
-        // Tyre indicator injected after acronym
+        // Selected highlight
+        if (isSelected) {
+            rowEl.style.background = 'rgba(255,255,255,0.06)';
+            rowEl.style.borderLeft = `2px solid ${info.colour}`;
+        }
+
+        rowEl.style.cursor = 'pointer';
+        rowEl.addEventListener('click', () => {
+            if (onDriverClick) onDriverClick(dn);
+        });
+
+        // Tyre indicator
         const compound = currentTyre[dn];
         if (compound && !isRetired) {
             const key       = compound.toUpperCase();
             const tyreColor = COMPOUND_COLOR[key] || '#555';
             const tyreLabel = COMPOUND_SHORT[key] || compound;
-
-            // Find the acronym span (3rd child: pos, avatar, acronym)
             const acronymEl = rowEl.children[2];
 
             const tyreWrap = document.createElement('span');

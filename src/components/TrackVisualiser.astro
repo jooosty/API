@@ -53,6 +53,7 @@
                 <span id="radio-time" class="radio-time">0:00</span>
             </div>
         </div>
+        <canvas id="telemetry-hud" width="160" height="160" style="position:absolute;bottom:40px;left:50%;transform:translateX(-50%);width:120px;height:120px;pointer-events:none;display:none;z-index:15;border-radius:6px;"></canvas>
         <div class="timeline-row">
             <span id="time-display">0:00</span>
             <input type="range" id="timeline-scrubber" min="0" max="1000" value="0" disabled />
@@ -663,6 +664,199 @@
         // ── Pit tower ─────────────────────────────────────────
         const stintsByDriver = buildPitTowerState(allStintData);
 
+        // ── Telemetry overlay ─────────────────────────────────
+        let selectedDriverNum  = null;
+        let allCarData         = {};  // driverNum → sorted car_data entries
+        let telemetryFetching  = false;
+
+        // ── Telemetry HUD (HTML canvas overlay) ──────────────
+        const hudCanvas = document.getElementById('telemetry-hud');
+        const hudCtx    = hudCanvas.getContext('2d');
+
+        function rr(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
+            ctx.arcTo(x+w,y,x+w,y+r,r); ctx.lineTo(x+w,y+h-r);
+            ctx.arcTo(x+w,y+h,x+w-r,y+h,r); ctx.lineTo(x+r,y+h);
+            ctx.arcTo(x,y+h,x,y+h-r,r); ctx.lineTo(x,y+r);
+            ctx.arcTo(x,y,x+r,y,r); ctx.closePath();
+        }
+
+        function arcBar(ctx, cx, cy, radius, startAng, endAng, frac, trackCol, fillCol, width) {
+            // Track
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, startAng, endAng);
+            ctx.strokeStyle = trackCol;
+            ctx.lineWidth = width;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            // Fill
+            const fillEnd = startAng + (endAng - startAng) * Math.min(1, Math.max(0, frac));
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, startAng, fillEnd);
+            ctx.strokeStyle = fillCol;
+            ctx.lineWidth = width;
+            ctx.stroke();
+        }
+
+        function drawHUD(entry, info) {
+            const W = hudCanvas.width, H = hudCanvas.height; // 160x160 internal
+            hudCtx.clearRect(0, 0, W, H);
+
+            // Background
+            hudCtx.fillStyle = 'rgba(6,8,14,0.96)';
+            hudCtx.fillRect(0, 0, W, H);
+
+            // Team colour top bar
+            hudCtx.fillStyle = info.colour;
+            hudCtx.fillRect(0, 0, W, 4);
+
+            if (!entry) {
+                hudCtx.fillStyle = '#444';
+                hudCtx.font = 'bold 11px monospace';
+                hudCtx.textAlign = 'center';
+                hudCtx.fillText('Loading…', W/2, H/2 + 4);
+                return;
+            }
+
+            const speed    = entry.speed    ?? 0;
+            const rpm      = entry.rpm      ?? 0;
+            const throttle = (entry.throttle ?? 0) / 100;
+            const brakeFrac= (entry.brake    ?? 0) / 100;
+            const gear     = entry.n_gear   ?? 0;
+            const drsOn    = (entry.drs     ?? 0) >= 10;
+            const rpmFrac  = Math.min(1, rpm / 15000);
+            const rpmCol   = rpmFrac > 0.9 ? '#ff2244' : rpmFrac > 0.75 ? '#f0c040' : '#00aaff';
+
+            const cx = W / 2, cy = H / 2 + 10; // dial centre
+            const R  = 58; // RPM arc radius
+
+            // ── RPM arc ───────────────────────────────────────
+            const aStart = Math.PI * 0.75, aEnd = Math.PI * 2.25;
+            // Track
+            hudCtx.beginPath();
+            hudCtx.arc(cx, cy, R, aStart, aEnd);
+            hudCtx.strokeStyle = 'rgba(255,255,255,0.07)';
+            hudCtx.lineWidth = 8;
+            hudCtx.lineCap = 'round';
+            hudCtx.stroke();
+            // Fill
+            if (rpmFrac > 0) {
+                hudCtx.beginPath();
+                hudCtx.arc(cx, cy, R, aStart, aStart + (aEnd - aStart) * rpmFrac);
+                hudCtx.strokeStyle = rpmCol;
+                hudCtx.lineWidth = 8;
+                hudCtx.stroke();
+            }
+
+            // ── Throttle arc (inner, right side) ─────────────
+            hudCtx.beginPath();
+            hudCtx.arc(cx, cy, R - 13, aStart, aEnd);
+            hudCtx.strokeStyle = 'rgba(255,255,255,0.05)';
+            hudCtx.lineWidth = 5;
+            hudCtx.stroke();
+            if (throttle > 0) {
+                hudCtx.beginPath();
+                hudCtx.arc(cx, cy, R - 13, aStart, aStart + (aEnd - aStart) * throttle);
+                hudCtx.strokeStyle = '#3ecf5a';
+                hudCtx.lineWidth = 5;
+                hudCtx.stroke();
+            }
+
+            // ── Brake arc (innermost) ─────────────────────────
+            if (brakeFrac > 0) {
+                hudCtx.beginPath();
+                hudCtx.arc(cx, cy, R - 22, aStart, aStart + (aEnd - aStart) * brakeFrac);
+                hudCtx.strokeStyle = '#e03030';
+                hudCtx.lineWidth = 4;
+                hudCtx.stroke();
+            }
+
+            // ── Speed (centre) ────────────────────────────────
+            hudCtx.fillStyle = '#ffffff';
+            hudCtx.font = `bold ${speed >= 100 ? 26 : 28}px monospace`;
+            hudCtx.textAlign = 'center';
+            hudCtx.fillText(speed, cx, cy - 8);
+
+            hudCtx.fillStyle = 'rgba(255,255,255,0.3)';
+            hudCtx.font = '9px monospace';
+            hudCtx.fillText('KM/H', cx, cy + 4);
+
+            // ── Gear ─────────────────────────────────────────
+            hudCtx.fillStyle = rpmFrac > 0.9 ? '#ff2244' : '#00ccff';
+            hudCtx.font = 'bold 16px monospace';
+            hudCtx.fillText(gear || 'N', cx, cy + 20);
+
+            // ── DRS dot ───────────────────────────────────────
+            hudCtx.beginPath();
+            hudCtx.arc(cx, cy + 34, 5, 0, Math.PI * 2);
+            hudCtx.fillStyle = drsOn ? '#3ecf5a' : 'rgba(255,255,255,0.1)';
+            hudCtx.fill();
+            if (drsOn) {
+                hudCtx.fillStyle = '#3ecf5a';
+                hudCtx.font = 'bold 7px monospace';
+                hudCtx.fillText('DRS', cx, cy + 47);
+            }
+
+            // ── Driver acronym ────────────────────────────────
+            hudCtx.fillStyle = info.colour;
+            hudCtx.font = 'bold 16px monospace';
+            hudCtx.textAlign = 'left';
+            hudCtx.fillText(info.acronym, 6, 18);
+        }
+
+        function getTelemAtTime(driverNum, t) {
+            const entries = allCarData[driverNum];
+            if (!entries || entries.length === 0) return null;
+            let best = entries[0];
+            for (const e of entries) {
+                if (new Date(e.date).getTime() <= t) best = e;
+                else break;
+            }
+            return best;
+        }
+
+        async function selectDriver(driverNum) {
+            if (selectedDriverNum === driverNum) {
+                // Deselect
+                selectedDriverNum = null;
+                hudCanvas.style.display = 'none';
+                renderer.render(scene, camera);
+                return;
+            }
+            selectedDriverNum = driverNum;
+            hudCanvas.style.display = 'block';
+
+            const info = driverInfoMap[driverNum] || { acronym: '#' + driverNum, colour: '#fff' };
+
+            // Draw immediately with whatever we have (may be empty)
+            drawHUD(getTelemAtTime(driverNum, simulatedTime), info);
+            renderer.render(scene, camera);
+
+            // Fetch if not already loaded
+            if (!allCarData[driverNum] && !telemetryFetching) {
+                telemetryFetching = true;
+                try {
+                    const raw = await apiFetch(`${BASE_URL}/car_data?session_key=${sessionKey}&driver_number=${driverNum}`);
+                    allCarData[driverNum] = Array.isArray(raw)
+                        ? raw.sort((a, b) => new Date(a.date) - new Date(b.date))
+                        : [];
+                } catch(e) {
+                    allCarData[driverNum] = [];
+                } finally {
+                    telemetryFetching = false;
+                }
+                drawHUD(getTelemAtTime(driverNum, simulatedTime), info);
+                renderer.render(scene, camera);
+            }
+        }
+
+        function updateTelemetry(t) {
+            if (selectedDriverNum === null || hudCanvas.style.display === 'none') return;
+            const info = driverInfoMap[selectedDriverNum] || { acronym: '#' + selectedDriverNum, colour: '#fff' };
+            drawHUD(getTelemAtTime(selectedDriverNum, t), info);
+        }
+
         function checkPit(t) {
             const pitRows = document.getElementById('pit-tower-rows');
             updatePitTower(t, pitRows, allPitData, stintsByDriver, driverInfoMap);
@@ -703,7 +897,7 @@
                         ? `L${currentLap}${totalLaps > 0 ? '/' + totalLaps : ''}`
                         : '';
                 }
-                updateRaceTower(t, intervalRows, allIntervalData, allPositionData, driverInfoMap, dnfDrivers, allStintData);
+                updateRaceTower(t, intervalRows, allIntervalData, allPositionData, driverInfoMap, dnfDrivers, allStintData, selectedDriverNum, selectDriver);
             }
 
             // Live lap tower — practice & qualifying only
@@ -721,6 +915,7 @@
             checkRadio(t);
             checkPit(t);
             checkOvertakes(t);
+            updateTelemetry(t);
         }
 
         // ── Stationary detection ──────────────────────────────
@@ -791,7 +986,7 @@
             timeDisplay.textContent = formatTime(elapsed);
             timelineScrubber.value  = String(Math.round((elapsed / totalDuration) * 1000));
 
-            if (ts - lastTowerUpdate > 500) { updateIntervalTower(simulatedTime); lastTowerUpdate = ts; }
+            if (ts - lastTowerUpdate > 500) { updateIntervalTower(simulatedTime); updateTelemetry(simulatedTime); lastTowerUpdate = ts; }
             renderer.render(scene, camera);
         }
 
