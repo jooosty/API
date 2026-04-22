@@ -54,6 +54,12 @@
             </div>
         </div>
         <canvas id="telemetry-hud" width="160" height="160" style="position:absolute;bottom:40px;left:50%;transform:translateX(-50%);width:120px;height:120px;pointer-events:none;display:none;z-index:15;border-radius:6px;"></canvas>
+        <div id="focus-badge" style="display:none;position:absolute;top:10px;left:50%;transform:translateX(-50%);display:none;align-items:center;gap:8px;background:rgba(6,8,14,0.88);border:1px solid #333;border-radius:6px;padding:5px 10px 5px 8px;font-family:var(--mono);z-index:20;pointer-events:auto;">
+            <span id="focus-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;"></span>
+            <span id="focus-name" style="font-size:11px;font-weight:700;letter-spacing:0.06em;color:#fff;"></span>
+            <span style="font-size:9px;color:#555;letter-spacing:0.1em;">FOCUS</span>
+            <button id="focus-exit" style="background:none;border:none;color:#555;font-size:11px;cursor:pointer;padding:0 2px;line-height:1;">✕</button>
+        </div>
         <div class="timeline-row">
             <span id="time-display">0:00</span>
             <input type="range" id="timeline-scrubber" min="0" max="1000" value="0" disabled />
@@ -89,8 +95,8 @@
 
 <script>
     import * as THREE from 'three';
-    import { createScene, createCamera, createRenderer, createLoadingSprite, buildCoordTransform, buildTrackGeometry, buildDriverDots } from '../scripts/track-scene.js';
-    import { setupDriverTrails, buildDrsZones } from '../scripts/track-overlays.js';
+    import { createScene, createCamera, createRenderer, createLoadingSprite, buildCoordTransform, buildTrackGeometry, buildDriverDots, setupDotClickDetection } from '../scripts/track-scene.js';
+    import { setupDriverTrails } from '../scripts/track-overlays.js';
     import { setupCameraControls } from '../scripts/track-camera.js';
     import { createApiFetcher, fetchSessionData, fetchTowerData, buildDriverInfoMap, fetchLocationData } from '../scripts/track-data.js';
     import { setupRadio } from '../scripts/track-radio.js';
@@ -152,19 +158,46 @@
         const driverDots   = buildDriverDots(scene, allDriverLocationData, driverInfoMap, toTrackPoint);
 
         // ── Camera controls ───────────────────────────────────
-        setupCameraControls(camera, renderer, () => renderer.render(scene, camera));
+        const cameraCtrl = setupCameraControls(camera, renderer, () => renderer.render(scene, camera));
 
         // ── Radio + telemetry ─────────────────────────────────
         const radio     = setupRadio(driverInfoMap);
         const telemetry = setupTelemetry(driverInfoMap, apiFetch, sessionKey, renderer, camera, scene);
 
+        // ── Focus mode ────────────────────────────────────────
+        const focusBadge = document.getElementById('focus-badge');
+        const focusDot   = document.getElementById('focus-dot');
+        const focusName  = document.getElementById('focus-name');
+        const focusExit  = document.getElementById('focus-exit');
+
+        function enterFocus(driverNum, dot) {
+            const info = driverInfoMap[driverNum] || { acronym: '#' + driverNum, colour: '#fff' };
+            focusDot.style.background = info.colour;
+            focusName.textContent     = info.acronym;
+            focusBadge.style.display  = 'flex';
+            cameraCtrl.focusDriver(dot);
+            telemetry.select(driverNum);   // also open telemetry panel
+        }
+
+        function exitFocus() {
+            focusBadge.style.display = 'none';
+            cameraCtrl.unfocus();
+        }
+
+        focusExit.addEventListener('click', exitFocus);
+
+        setupDotClickDetection(
+            renderer, camera, driverDots, allDriverLocationData,
+            (driverNum, dot) => enterFocus(driverNum, dot),
+            exitFocus
+        );
+
         // ── Playback ──────────────────────────────────────────
         setupPlayback({
             scene, camera, renderer,
             driverDots, allDriverLocationData,
-            refDriver,
-            toTrackPoint,
-            setupDriverTrails, buildDrsZones,
+            setupDriverTrails,
+            cameraCtrl,
             ...towerData,
             driverInfoMap, isPractice, isQualifying,
             radio, telemetry,

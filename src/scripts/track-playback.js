@@ -2,7 +2,6 @@
  * track-playback.js
  * Timeline scrubber, animation loop, weather overlay and tower dispatch.
  */
-import { BASE_URL } from './constants.js';
 import { updatePracticeTower }   from './tower-practice.js';
 import { updateQualifyingTower } from './tower-qualifying.js';
 import { updateRaceTower }       from './tower-race.js';
@@ -45,39 +44,12 @@ function updateWeather(t, allWeatherData) {
     }
 }
 
-export function setupPlayback({ scene, camera, renderer, driverDots, allDriverLocationData, refDriver, toTrackPoint, setupDriverTrails, buildDrsZones, allLapData, allStintData, allIntervalData, allPositionData, allPitData, allOvertakeData, allRaceControlData = [], allWeatherData, allRadioData, driverInfoMap, dnfDrivers, isPractice, isQualifying, qualPhaseBoundaries, radio, telemetry, apiFetch, sessionKey }) {
+export function setupPlayback({ scene, camera, renderer, driverDots, allDriverLocationData, setupDriverTrails, cameraCtrl = null, allLapData, allStintData, allIntervalData, allPositionData, allPitData, allOvertakeData, allRaceControlData = [], allWeatherData, allRadioData, driverInfoMap, dnfDrivers, isPractice, isQualifying, qualPhaseBoundaries, radio, telemetry }) {
     const stintsByDriver = buildPitTowerState(allStintData);
 
     // ── Driver trails ─────────────────────────────────────────
     const updateTrails = setupDriverTrails(scene, driverDots, driverInfoMap, allDriverLocationData);
 
-    // ── Speed heatmap + DRS zones (built after fetching car data) ──
-    // Fetch car data for the ref driver (most points = most complete lap)
-    // We use one driver's data as a representative sample for the track.
-    let drsBuilt     = false;
-
-    async function buildTrackOverlays() {
-        if (heatmapBuilt && drsBuilt) return;
-        try {
-            const refDriverNum = refDriver.driver.driver_number;
-            const raw = await apiFetch(`${BASE_URL}/car_data?session_key=${sessionKey}&driver_number=${refDriverNum}`);
-            const carData = Array.isArray(raw) ? raw.sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
-            if (carData.length === 0) return;
-
-            const rp = refDriver.points;
-            const mp = rp.map(toTrackPoint);
-
-if (!drsBuilt) {
-                buildDrsZones(scene, rp, mp, carData);
-                drsBuilt = true;
-            }
-        } catch(e) {
-            console.warn('Track overlays fetch failed:', e);
-        }
-    }
-
-    // Kick off overlay build after a short delay so it doesn't block startup
-    setTimeout(buildTrackOverlays, 2000);
 
     const firstLocationTime = Math.min(...allDriverLocationData.map(d => new Date(d.points[0].date).getTime()));
     const firstLapTime = allLapData.length > 0
@@ -188,6 +160,7 @@ if (!drsBuilt) {
 
     function animate(ts) {
         requestAnimationFrame(animate);
+        if (cameraCtrl) cameraCtrl.tickFocus();
         if (!isPlaying || isScrubbing) return;
         if (lastRealTime === null) lastRealTime = ts;
         simulatedTime += (ts - lastRealTime) * Number(document.getElementById('speed-select').value);

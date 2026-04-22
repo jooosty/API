@@ -132,3 +132,40 @@ export function buildCoordTransform(allDriverLocationData) {
         );
     };
 }
+
+/**
+ * Set up raycasting so clicking a driver dot fires onDriverClick(driverNumber).
+ * Clicking empty space fires onBackgroundClick().
+ */
+export function setupDotClickDetection(renderer, camera, driverDots, allDriverLocationData, onDriverClick, onBackgroundClick) {
+    const raycaster = new THREE.Raycaster();
+    const mouse     = new THREE.Vector2();
+
+    renderer.domElement.addEventListener('click', e => {
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
+        mouse.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+
+        // Collect all meshes from driver dot groups
+        const meshes = [];
+        driverDots.forEach((d, idx) => {
+            d.dotMesh.traverse(child => {
+                if (child.isMesh) {
+                    child.userData._dotIdx = idx;
+                    meshes.push(child);
+                }
+            });
+        });
+
+        const hits = raycaster.intersectObjects(meshes, false);
+        if (hits.length > 0) {
+            const idx    = hits[0].object.userData._dotIdx;
+            const driver = allDriverLocationData[idx]?.driver;
+            if (driver) onDriverClick(driver.driver_number, driverDots[idx]);
+        } else {
+            if (onBackgroundClick) onBackgroundClick();
+        }
+    });
+}
