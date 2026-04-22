@@ -173,21 +173,21 @@
 
         // Loading sprite
         const loadingCanvas = document.createElement('canvas');
-        loadingCanvas.width = 512;
-        loadingCanvas.height = 64;
+        loadingCanvas.width = 1024;
+        loadingCanvas.height = 80;
         const loadingContext = loadingCanvas.getContext('2d');
         const loadingTexture = new THREE.CanvasTexture(loadingCanvas);
         const loadingSprite  = new THREE.Sprite(new THREE.SpriteMaterial({ map: loadingTexture }));
-        loadingSprite.scale.set(400, 50, 1);
+        loadingSprite.scale.set(700, 55, 1);
         loadingSprite.position.set(0, 0, 1);
         scene.add(loadingSprite);
 
         function setLoadingText(text) {
             loadingContext.clearRect(0, 0, loadingCanvas.width, loadingCanvas.height);
             loadingContext.fillStyle = '#ffffff';
-            loadingContext.font = 'bold 48px monospace';
+            loadingContext.font = 'bold 44px monospace';
             loadingContext.textAlign = 'center';
-            loadingContext.fillText(text, loadingCanvas.width / 2, 52);
+            loadingContext.fillText(text, loadingCanvas.width / 2, 56);
             loadingTexture.needsUpdate = true;
             renderer.render(scene, camera);
         }
