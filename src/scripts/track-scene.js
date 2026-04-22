@@ -55,8 +55,10 @@ export function buildTrackGeometry(scene, allDriverLocationData, toTrackPoint) {
     );
     scene.add(new THREE.Line(
         new THREE.BufferGeometry().setFromPoints(mostPoints.points.map(toTrackPoint)),
-        new THREE.LineBasicMaterial({ color: 0x444444 })
+        new THREE.LineBasicMaterial({ color: 0x333333 })
     ));
+    // Return the reference driver so overlays can reuse its point arrays
+    return mostPoints;
 }
 
 export function buildDriverDots(scene, allDriverLocationData, driverInfoMap, toTrackPoint) {

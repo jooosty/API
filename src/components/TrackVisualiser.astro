@@ -90,6 +90,7 @@
 <script>
     import * as THREE from 'three';
     import { createScene, createCamera, createRenderer, createLoadingSprite, buildCoordTransform, buildTrackGeometry, buildDriverDots } from '../scripts/track-scene.js';
+    import { setupDriverTrails, buildDrsZones } from '../scripts/track-overlays.js';
     import { setupCameraControls } from '../scripts/track-camera.js';
     import { createApiFetcher, fetchSessionData, fetchTowerData, buildDriverInfoMap, fetchLocationData } from '../scripts/track-data.js';
     import { setupRadio } from '../scripts/track-radio.js';
@@ -147,8 +148,8 @@
 
         // ── Build scene ───────────────────────────────────────
         const toTrackPoint = buildCoordTransform(allDriverLocationData);
-        buildTrackGeometry(scene, allDriverLocationData, toTrackPoint);
-        const driverDots = buildDriverDots(scene, allDriverLocationData, driverInfoMap, toTrackPoint);
+        const refDriver    = buildTrackGeometry(scene, allDriverLocationData, toTrackPoint);
+        const driverDots   = buildDriverDots(scene, allDriverLocationData, driverInfoMap, toTrackPoint);
 
         // ── Camera controls ───────────────────────────────────
         setupCameraControls(camera, renderer, () => renderer.render(scene, camera));
@@ -161,9 +162,13 @@
         setupPlayback({
             scene, camera, renderer,
             driverDots, allDriverLocationData,
+            refDriver,
+            toTrackPoint,
+            setupDriverTrails, buildDrsZones,
             ...towerData,
             driverInfoMap, isPractice, isQualifying,
             radio, telemetry,
+            apiFetch, sessionKey,
         });
     }
 
