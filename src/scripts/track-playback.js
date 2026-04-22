@@ -159,7 +159,7 @@ export function setupPlayback({ scene, camera, renderer, driverDots, allDriverLo
     let lastTowerUpdate = 0;
 
     function animate(ts) {
-        requestAnimationFrame(animate);
+        animFrameId = requestAnimationFrame(animate);
         if (cameraCtrl) cameraCtrl.tickFocus();
         if (!isPlaying || isScrubbing) return;
         if (lastRealTime === null) lastRealTime = ts;
@@ -192,5 +192,12 @@ export function setupPlayback({ scene, camera, renderer, driverDots, allDriverLo
         renderer.render(scene, camera);
     }
 
-    requestAnimationFrame(animate);
+    let animFrameId = requestAnimationFrame(animate);
+
+    function destroy() {
+        cancelAnimationFrame(animFrameId);
+        isPlaying = false;
+    }
+
+    return { destroy };
 }

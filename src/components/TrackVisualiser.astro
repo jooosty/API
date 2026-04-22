@@ -118,6 +118,7 @@
     }
 
     let currentSessionKey = null;
+    let currentPlayback   = null;  // holds { destroy } from setupPlayback
     window.addEventListener('session-changed', (e) => {
         currentSessionKey = e.detail.sessionKey;
         const label = document.getElementById('active-session-label');
@@ -126,6 +127,8 @@
     });
 
     async function startTrackLoad() {
+        // Stop the previous session's animation loop before starting a new one
+        if (currentPlayback) { currentPlayback.destroy(); currentPlayback = null; }
         setLoadControls(true);
         try { await loadTrack(); } finally { setLoadControls(false); }
     }
@@ -193,7 +196,7 @@
         );
 
         // ── Playback ──────────────────────────────────────────
-        setupPlayback({
+        currentPlayback = setupPlayback({
             scene, camera, renderer,
             driverDots, allDriverLocationData,
             setupDriverTrails,
