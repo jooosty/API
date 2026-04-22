@@ -1,6 +1,6 @@
 import { buildTowerRow } from './tower-base.js';
 
-export function updateQualifyingTower(currentSimTime, intervalRows, allLapData, qualPhaseBoundaries, driverInfoMap) {
+export function updateQualifyingTower(currentSimTime, intervalRows, allLapData, qualPhaseBoundaries, driverInfoMap, onPrimaryClick = null, onSecondaryClick = null) {
     const bestLap = {};
     const lastLapTime = {};
 
@@ -113,6 +113,10 @@ export function updateQualifyingTower(currentSimTime, intervalRows, allLapData, 
         rowEl.querySelector('span').style.color = showRed ? '#7a2020' : '#666';
         rowEl.querySelectorAll('span')[2].style.color = showRed ? '#e03030' : '#fff';
 
+        rowEl.style.cursor = 'pointer';
+        rowEl.title = 'Left click: telemetry  |  Right click: compare';
+        rowEl.addEventListener('click', () => { if (onPrimaryClick) onPrimaryClick(dn); });
+        rowEl.addEventListener('contextmenu', e => { e.preventDefault(); if (onSecondaryClick) onSecondaryClick(dn); });
         intervalRows.appendChild(rowEl);
     });
 }

@@ -44,7 +44,7 @@ function updateWeather(t, allWeatherData) {
     }
 }
 
-export function setupPlayback({ scene, camera, renderer, driverDots, allDriverLocationData, setupDriverTrails, cameraCtrl = null, allLapData, allStintData, allIntervalData, allPositionData, allPitData, allOvertakeData, allRaceControlData = [], allWeatherData, allRadioData, driverInfoMap, dnfDrivers, isPractice, isQualifying, qualPhaseBoundaries, radio, telemetry }) {
+export function setupPlayback({ scene, camera, renderer, driverDots, allDriverLocationData, setupDriverTrails, cameraCtrl = null, allLapData, allStintData, allIntervalData, allPositionData, allPitData, allOvertakeData, allRaceControlData = [], allWeatherData, allRadioData, driverInfoMap, dnfDrivers, isPractice, isQualifying, qualPhaseBoundaries, radio, telemetry, comparison = null }) {
     const stintsByDriver = buildPitTowerState(allStintData);
 
     // ── Driver trails ─────────────────────────────────────────
@@ -89,10 +89,16 @@ export function setupPlayback({ scene, camera, renderer, driverDots, allDriverLo
         if (isPractice) {
             if (phaseEl) phaseEl.textContent = '';
             if (lapCounterEl) lapCounterEl.textContent = '';
-            updatePracticeTower(t, intervalRows, allLapData, driverInfoMap);
+            updatePracticeTower(t, intervalRows, allLapData, driverInfoMap,
+                (dn) => { telemetry.select(dn); },
+                (dn) => { if (comparison) { comparison.selectDriver(dn); comparison.render(simulatedTime); } }
+            );
         } else if (isQualifying) {
             if (lapCounterEl) lapCounterEl.textContent = '';
-            updateQualifyingTower(t, intervalRows, allLapData, qualPhaseBoundaries, driverInfoMap);
+            updateQualifyingTower(t, intervalRows, allLapData, qualPhaseBoundaries, driverInfoMap,
+                (dn) => { telemetry.select(dn); },
+                (dn) => { if (comparison) { comparison.selectDriver(dn); comparison.render(simulatedTime); } }
+            );
         } else {
             if (phaseEl) phaseEl.textContent = '';
             if (lapCounterEl && allLapData.length > 0) {
@@ -101,7 +107,11 @@ export function setupPlayback({ scene, camera, renderer, driverDots, allDriverLo
                 const totalLaps  = Math.max(...allLapData.map(l => l.lap_number || 0));
                 lapCounterEl.textContent = currentLap > 0 ? `L${currentLap}${totalLaps > 0 ? '/' + totalLaps : ''}` : '';
             }
-            updateRaceTower(t, intervalRows, allIntervalData, allPositionData, driverInfoMap, dnfDrivers, allStintData, telemetry.getSelectedDriver(), telemetry.select);
+            updateRaceTower(t, intervalRows, allIntervalData, allPositionData, driverInfoMap, dnfDrivers, allStintData,
+                telemetry.getSelectedDriver(),
+                (dn) => { telemetry.select(dn); },
+                (dn) => { if (comparison) { comparison.selectDriver(dn); comparison.render(simulatedTime); } }
+            );
         }
 
         if (isPractice || isQualifying) {
@@ -122,6 +132,7 @@ export function setupPlayback({ scene, camera, renderer, driverDots, allDriverLo
         }
         updateRaceControlTower(t, document.getElementById('race-control-rows'), allRaceControlData, driverInfoMap);
         telemetry.update(t);
+        if (comparison) comparison.render(t);
     }
 
     // ── Scrubber ──────────────────────────────────────────────

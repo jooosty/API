@@ -90,6 +90,12 @@
             <div class="tower-empty">Load track to show</div>
         </div>
     </div>
+    <div id="comparison-panel">
+        <div class="tower-header" style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;"><span>Comparison</span><span style="font-size:8px;color:#444;letter-spacing:0.04em;">right-click driver</span></div>
+        <div id="comparison-rows">
+            <div class="comp-empty">Right-click a driver to compare</div>
+        </div>
+    </div>
 </div>
 </div>
 
@@ -102,6 +108,7 @@
     import { setupRadio } from '../scripts/track-radio.js';
     import { setupTelemetry } from '../scripts/track-telemetry.js';
     import { setupPlayback } from '../scripts/track-playback.js';
+    import { setupComparison } from '../scripts/session-comparison.js';
 
     const scene    = createScene();
     const camera   = createCamera();
@@ -204,6 +211,9 @@
         if (pitTower)      pitTower.style.display      = (isPractice || isQualifying) ? 'none' : '';
         if (overtakeTower) overtakeTower.style.display = (isPractice || isQualifying) ? 'none' : '';
 
+        // ── Session comparison ───────────────────────────────
+        const comparison = setupComparison(towerData.allLapData, towerData.allStintData, driverInfoMap);
+
         currentPlayback = setupPlayback({
             scene, camera, renderer,
             driverDots, allDriverLocationData,
@@ -212,6 +222,7 @@
             ...towerData,
             driverInfoMap, isPractice, isQualifying,
             radio, telemetry,
+            comparison,
             apiFetch, sessionKey,
         });
     }

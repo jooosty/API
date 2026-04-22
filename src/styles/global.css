@@ -865,3 +865,56 @@ label {
 #race-control-rows::-webkit-scrollbar {
     display: none;
 }
+
+/* ── Session comparison panel ────────────────────────────────── */
+
+#comparison-panel {
+    width: 340px;
+    height: 600px;
+    background: rgba(14, 14, 14, 0.82);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 8px 0;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+#comparison-rows {
+    padding: 0 10px;
+    overflow-y: auto;
+    max-height: calc(600px - 32px);
+    scrollbar-width: none;
+}
+
+#comparison-rows::-webkit-scrollbar {
+    display: none;
+}
+
+.comp-empty {
+    color: #444;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    padding: 16px 0;
+    text-align: center;
+}
+
+#comparison-rows table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#comparison-rows table th {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid #2a2a2a;
+    padding-bottom: 6px;
+    color: #555;
+}
+
+#comparison-rows table td {
+    font-size: 10px;
+    color: #888;
+}

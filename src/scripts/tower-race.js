@@ -18,7 +18,7 @@ const COMPOUND_SHORT = {
     WET:          'WET',
 };
 
-export function updateRaceTower(currentSimTime, intervalRows, allIntervalData, allPositionData, driverInfoMap, dnfDrivers, allStintData = [], selectedDriverNum = null, onDriverClick = null) {
+export function updateRaceTower(currentSimTime, intervalRows, allIntervalData, allPositionData, driverInfoMap, dnfDrivers, allStintData = [], selectedDriverNum = null, onPrimaryClick = null, onSecondaryClick = null) {
     if (allIntervalData.length === 0) return;
 
     const latestInterval = {};
@@ -111,9 +111,9 @@ export function updateRaceTower(currentSimTime, intervalRows, allIntervalData, a
         }
 
         rowEl.style.cursor = 'pointer';
-        rowEl.addEventListener('click', () => {
-            if (onDriverClick) onDriverClick(dn);
-        });
+        rowEl.title = 'Left click: telemetry  |  Right click: compare';
+        rowEl.addEventListener('click', () => { if (onPrimaryClick) onPrimaryClick(dn); });
+        rowEl.addEventListener('contextmenu', e => { e.preventDefault(); if (onSecondaryClick) onSecondaryClick(dn); });
 
         // Tyre indicator
         const compound = currentTyre[dn];
