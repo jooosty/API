@@ -8,6 +8,7 @@ import { updateRaceTower }       from './tower-race.js';
 import { updateLiveLapTower }    from './tower-live-lap.js';
 import { buildPitTowerState, updatePitTower } from './tower-pit.js';
 import { updateOvertakeTower }   from './tower-overtakes.js';
+import { updateRaceControlTower } from './tower-race-control.js';
 
 function formatTime(ms) {
     const s = Math.floor(ms / 1000);
@@ -43,7 +44,7 @@ function updateWeather(t, allWeatherData) {
     }
 }
 
-export function setupPlayback({ scene, camera, renderer, driverDots, allDriverLocationData, allLapData, allStintData, allIntervalData, allPositionData, allPitData, allOvertakeData, allWeatherData, allRadioData, driverInfoMap, dnfDrivers, isPractice, isQualifying, qualPhaseBoundaries, radio, telemetry }) {
+export function setupPlayback({ scene, camera, renderer, driverDots, allDriverLocationData, allLapData, allStintData, allIntervalData, allPositionData, allPitData, allOvertakeData, allRaceControlData = [], allWeatherData, allRadioData, driverInfoMap, dnfDrivers, isPractice, isQualifying, qualPhaseBoundaries, radio, telemetry }) {
     const stintsByDriver = buildPitTowerState(allStintData);
 
     const firstLocationTime = Math.min(...allDriverLocationData.map(d => new Date(d.points[0].date).getTime()));
@@ -113,6 +114,7 @@ export function setupPlayback({ scene, camera, renderer, driverDots, allDriverLo
         radio.check(t, allRadioData);
         updatePitTower(t, document.getElementById('pit-tower-rows'), allPitData, stintsByDriver, driverInfoMap);
         updateOvertakeTower(t, document.getElementById('overtake-rows'), allOvertakeData, driverInfoMap, allLapData);
+        updateRaceControlTower(t, document.getElementById('race-control-rows'), allRaceControlData, driverInfoMap);
         telemetry.update(t);
     }
 

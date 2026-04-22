@@ -55,7 +55,7 @@ export async function fetchSessionData(apiFetch, sessionKey, setLoadingText) {
 
 export async function fetchTowerData(apiFetch, sessionKey, isPractice, isQualifying, setLoadingText) {
     let allIntervalData = [], allPositionData = [], allLapData = [];
-    let allStintData = [], allPitData = [], allOvertakeData = [];
+    let allStintData = [], allPitData = [], allOvertakeData = [], allRaceControlData = [];
     let qualPhaseBoundaries = [];
     const dnfDrivers = new Set();
 
@@ -69,6 +69,10 @@ export async function fetchTowerData(apiFetch, sessionKey, isPractice, isQualify
         setLoadingText('Fetching pit stops...');
         const pitRaw = await apiFetch(`${BASE_URL}/pit?session_key=${sessionKey}`);
         allPitData = Array.isArray(pitRaw) ? pitRaw.sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
+
+        setLoadingText('Fetching race control...');
+        const rcPracticeRaw = await apiFetch(`${BASE_URL}/race_control?session_key=${sessionKey}`);
+        allRaceControlData = Array.isArray(rcPracticeRaw) ? rcPracticeRaw.sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
 
     } else if (isQualifying) {
         setLoadingText('Fetching lap times...');
@@ -93,6 +97,7 @@ export async function fetchTowerData(apiFetch, sessionKey, isPractice, isQualify
         for (let p = 1; p <= 2; p++) {
             if (phaseStartTimes[p + 1]) qualPhaseBoundaries.push(phaseStartTimes[p + 1]);
         }
+        allRaceControlData = Array.isArray(rcData) ? rcData.sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
 
     } else {
         setLoadingText('Fetching intervals...');
@@ -118,6 +123,10 @@ export async function fetchTowerData(apiFetch, sessionKey, isPractice, isQualify
         setLoadingText('Fetching overtakes...');
         const overtakeRaw = await apiFetch(`${BASE_URL}/overtakes?session_key=${sessionKey}`);
         allOvertakeData = Array.isArray(overtakeRaw) ? overtakeRaw.sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
+
+        setLoadingText('Fetching race control...');
+        const rcRaceRaw = await apiFetch(`${BASE_URL}/race_control?session_key=${sessionKey}`);
+        allRaceControlData = Array.isArray(rcRaceRaw) ? rcRaceRaw.sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
     }
 
     setLoadingText('Fetching weather...');
@@ -130,7 +139,7 @@ export async function fetchTowerData(apiFetch, sessionKey, isPractice, isQualify
 
     return {
         allIntervalData, allPositionData, allLapData, allStintData,
-        allPitData, allOvertakeData, allWeatherData, allRadioData,
+        allPitData, allOvertakeData, allRaceControlData, allWeatherData, allRadioData,
         qualPhaseBoundaries, dnfDrivers,
     };
 }
