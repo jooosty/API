@@ -62,3 +62,52 @@
 - I learned how to calculate and show intervals and sector times from live timing data
 - I learned how to connect race calendar and weather data to make the visualisation more complete
 - I learned that updating and refining features (like the race calendar) improves usability over time
+
+
+
+
+
+
+
+
+
+
+# Web APIs Used
+
+## Core
+
+### [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API)
+All data requests to OpenF1 are made through `fetch()`. The custom `apiFetch()` wrapper adds rate limiting and automatic retry on 429 responses.
+
+### [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
+Powers team radio playback via `new Audio()`. Handles play/pause, progress tracking, and auto-dismiss when audio ends.
+
+---
+
+## Graphics
+
+### [Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
+Used for the loading screen — a `<canvas>` element is drawn to with `getContext('2d')` and `fillText()`, then fed into Three.js as a `CanvasTexture` to display loading progress on the 3D scene.
+
+### [WebGL API](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API)
+The track renderer is built on WebGL via Three.js. Handles the track line geometry, driver dot meshes, headshot textures, orthographic camera, and the render loop.
+
+---
+
+## UI & Interaction
+
+### [DOM API](https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model)
+All tower rows (intervals, live lap, pit stops) are built by dynamically creating and appending elements with `createElement()`, `appendChild()`, and `innerHTML`.
+
+### [EventTarget / addEventListener](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener)
+Used throughout for user interaction — timeline scrubber input, play/pause button clicks, mouse wheel zoom, and mouse drag panning on the track canvas.
+
+### [AnimationFrame API](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame)
+Drives the main animation loop. Each frame advances the simulated race time, updates driver dot positions, and throttles tower re-renders to every 500ms.
+
+---
+
+## Timing
+
+### [setTimeout / clearTimeout](https://developer.mozilla.org/en-US/docs/Web/API/setTimeout)
+Used for auto-dismissing the team radio popup after 15 seconds (or 3 seconds after audio ends).
