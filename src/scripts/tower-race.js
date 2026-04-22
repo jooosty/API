@@ -1,6 +1,24 @@
 import { buildTowerRow } from './tower-base.js';
 
-export function updateRaceTower(currentSimTime, intervalRows, allIntervalData, allPositionData, driverInfoMap, dnfDrivers) {
+const COMPOUND_COLOR = {
+    SOFT:         '#c0392b',
+    MEDIUM:       '#d4ac0d',
+    HARD:         '#e0e0e0',
+    INTERMEDIATE: '#27ae60',
+    INTER:        '#27ae60',
+    WET:          '#2980b9',
+};
+
+const COMPOUND_SHORT = {
+    SOFT:         'SOFT',
+    MEDIUM:       'MED',
+    HARD:         'HARD',
+    INTERMEDIATE: 'INTER',
+    INTER:        'INTER',
+    WET:          'WET',
+};
+
+export function updateRaceTower(currentSimTime, intervalRows, allIntervalData, allPositionData, driverInfoMap, dnfDrivers, allStintData = []) {
     if (allIntervalData.length === 0) return;
 
     const latestInterval = {};
@@ -20,6 +38,20 @@ export function updateRaceTower(currentSimTime, intervalRows, allIntervalData, a
         const dn = entry.driver_number;
         if (!latestPosition[dn] || t > new Date(latestPosition[dn].date).getTime()) {
             latestPosition[dn] = entry;
+        }
+    }
+
+    // Current tyre per driver: latest stint for that driver
+    const currentTyre = {};
+    if (allStintData.length > 0) {
+        const byDriver = {};
+        for (const s of allStintData) {
+            if (!byDriver[s.driver_number]) byDriver[s.driver_number] = [];
+            byDriver[s.driver_number].push(s);
+        }
+        for (const dn of Object.keys(byDriver)) {
+            const stints = byDriver[dn].sort((a, b) => a.stint_number - b.stint_number);
+            currentTyre[Number(dn)] = stints[stints.length - 1].compound || null;
         }
     }
 
@@ -60,14 +92,44 @@ export function updateRaceTower(currentSimTime, intervalRows, allIntervalData, a
         else if (typeof gapRaw === 'number') gapText = '+' + gapRaw.toFixed(3);
         else                                 gapText = '—';
 
-        intervalRows.appendChild(buildTowerRow({
-            position:  i + 1,
-            colour:    info.colour,
-            acronym:   info.acronym,
-            mainText:  intervalText,
-            mainColor: isLeader ? '#f0c040' : isRetired ? '#666' : '#ccc',
-            subText:   isLeader ? '' : gapText,
-            subColor:  '#555',
-        }));
+        const rowEl = buildTowerRow({
+            position:    i + 1,
+            colour:      info.colour,
+            acronym:     info.acronym,
+            // Interval tower uses team logo; headshot stays null here so logo shows
+            teamLogoUrl: info.teamLogoUrl || null,
+            headshotUrl: null,
+            mainText:    intervalText,
+            mainColor:   isLeader ? '#f0c040' : isRetired ? '#666' : '#ccc',
+            subText:     isLeader ? '' : gapText,
+            subColor:    '#555',
+        });
+
+        // Tyre indicator injected after acronym
+        const compound = currentTyre[dn];
+        if (compound && !isRetired) {
+            const key       = compound.toUpperCase();
+            const tyreColor = COMPOUND_COLOR[key] || '#555';
+            const tyreLabel = COMPOUND_SHORT[key] || compound;
+
+            // Find the acronym span (3rd child: pos, avatar, acronym)
+            const acronymEl = rowEl.children[2];
+
+            const tyreWrap = document.createElement('span');
+            tyreWrap.style.cssText = 'display:inline-flex;align-items:center;gap:2px;margin-left:3px;';
+
+            const tyreDot = document.createElement('span');
+            tyreDot.style.cssText = `display:inline-block;width:7px;height:7px;border-radius:50%;background:${tyreColor};flex-shrink:0;border:1px solid rgba(255,255,255,0.15);`;
+
+            const tyreTxt = document.createElement('span');
+            tyreTxt.style.cssText = `font-size:8px;color:${tyreColor};letter-spacing:0.02em;`;
+            tyreTxt.textContent = tyreLabel;
+
+            tyreWrap.appendChild(tyreDot);
+            tyreWrap.appendChild(tyreTxt);
+            acronymEl.after(tyreWrap);
+        }
+
+        intervalRows.appendChild(rowEl);
     });
 }

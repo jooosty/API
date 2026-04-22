@@ -79,6 +79,7 @@
     import { updateRaceTower }       from '../scripts/tower-race.js';
     import { updateLiveLapTower }    from '../scripts/tower-live-lap.js';
     import { buildPitTowerState, updatePitTower } from '../scripts/tower-pit.js';
+    import { teamLogoUrl } from '../scripts/tower-base.js';
 
     // ── Scene setup ───────────────────────────────────────────
     const scene = new THREE.Scene();
@@ -306,8 +307,11 @@
         const driverInfoMap = {};
         driversData.forEach(d => {
             driverInfoMap[d.driver_number] = {
-                acronym: d.name_acronym || ('#' + d.driver_number),
-                colour:  d.team_colour ? '#' + d.team_colour : '#ffffff',
+                acronym:     d.name_acronym || ('#' + d.driver_number),
+                colour:      d.team_colour ? '#' + d.team_colour : '#ffffff',
+                headshotUrl: d.headshot_url || null,
+                teamName:    d.team_name   || null,
+                teamLogoUrl: teamLogoUrl(d.team_name),
             };
         });
 
@@ -382,12 +386,62 @@
         ));
 
         // ── Driver dots ───────────────────────────────────────
-        const driverDots = allDriverLocationData.map(({ driver, points }) => {
-            const teamColor   = driver.team_colour ? parseInt(driver.team_colour, 16) : 0xffffff;
-            const dotMesh     = new THREE.Mesh(
-                new THREE.CircleGeometry(5, 32),
+        // Each dot is a headshot texture inside a team-colour ring.
+        // We render two meshes per driver: a slightly larger coloured disc
+        // (the border) and a smaller disc on top with the headshot texture.
+        function makeDriverDot(driver) {
+            const teamColor  = driver.team_colour ? parseInt(driver.team_colour, 16) : 0xffffff;
+            const headshotUrl = driverInfoMap[driver.driver_number]?.headshotUrl;
+
+            const dotGroup = new THREE.Group();
+
+            // Outer ring — team colour
+            const ringMesh = new THREE.Mesh(
+                new THREE.CircleGeometry(6.5, 32),
                 new THREE.MeshBasicMaterial({ color: teamColor })
             );
+            ringMesh.position.set(0, 0, 0);
+            dotGroup.add(ringMesh);
+
+            if (headshotUrl) {
+                // Load headshot onto inner disc
+                const loader = new THREE.TextureLoader();
+                loader.load(
+                    headshotUrl,
+                    (texture) => {
+                        texture.center.set(0.5, 0.5);
+                        const innerMesh = new THREE.Mesh(
+                            new THREE.CircleGeometry(5, 32),
+                            new THREE.MeshBasicMaterial({ map: texture })
+                        );
+                        innerMesh.position.set(0, 0, 0.1);
+                        dotGroup.add(innerMesh);
+                    },
+                    undefined,
+                    () => {
+                        const innerMesh = new THREE.Mesh(
+                            new THREE.CircleGeometry(4.5, 32),
+                            new THREE.MeshBasicMaterial({ color: 0x111111 })
+                        );
+                        innerMesh.position.set(0, 0, 0.1);
+                        dotGroup.add(innerMesh);
+                    }
+                );
+            } else {
+                // No headshot — dark inner disc so ring is visible
+                const innerMesh = new THREE.Mesh(
+                    new THREE.CircleGeometry(4.5, 32),
+                    new THREE.MeshBasicMaterial({ color: 0x111111 })
+                );
+                innerMesh.position.set(0, 0, 0.1);
+                dotGroup.add(innerMesh);
+            }
+
+            return dotGroup;
+        }
+
+        const driverDots = allDriverLocationData.map(({ driver, points }) => {
+            const dotMesh      = makeDriverDot(driver);
             const mappedPoints = points.map(toTrackPoint);
             dotMesh.position.set(mappedPoints[0].x, mappedPoints[0].y, 1);
             scene.add(dotMesh);
@@ -600,7 +654,7 @@
                 updateQualifyingTower(t, intervalRows, allLapData, qualPhaseBoundaries, driverInfoMap);
             } else {
                 if (phaseEl) phaseEl.textContent = '';
-                updateRaceTower(t, intervalRows, allIntervalData, allPositionData, driverInfoMap, dnfDrivers);
+                updateRaceTower(t, intervalRows, allIntervalData, allPositionData, driverInfoMap, dnfDrivers, allStintData);
             }
 
             // Live lap tower — practice & qualifying only
