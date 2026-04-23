@@ -81,6 +81,10 @@
 - added pinning camera to a driver
 - made previous session delete itself when new session is loaded
 - added driver comparision mode
+- added intro instead of loading screen
+- added skip button to intro
+- added podium
+- added PiP
 
 ### How long did it take
 - 2 hours
@@ -97,6 +101,10 @@
 - 1 hour
 - 1 hour
 - 1 hour
+- 1 hour
+- 30 minutes
+- 2 hours
+- 1 hour
 
 ### What did i learn
 - I learned how to optimize load times by only fetching necessary data and using caching where possible
@@ -111,6 +119,9 @@
 - I learned how to implement a camera system that can be pinned to a specific driver for a focused view of their performance
 - I learned how to manage state and cleanup when switching between sessions to prevent memory leaks and ensure a smooth user experience
 - I learned how to create a driver comparison mode that allows users to select two drivers and compare their lap times, sector times, and telemetry data side by side for deeper analysis
+- I learned how to create an engaging intro sequence that plays before the session loads, and how to add a skip button for users who want to jump straight to the action
+- I learned how to design and implement a podium screen that celebrates the top finishers at the end of the race
+- I learned how to implement Picture-in-Picture (PiP) mode to allow users to watch
 
 
 
