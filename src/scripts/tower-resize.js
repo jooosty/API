@@ -74,7 +74,7 @@ export function setupTowerResize() {
 
         window.addEventListener('mousemove', (e) => {
             if (!dragging) return;
-            const delta = startX - e.clientX; // dragging left edge: pulling left = wider
+            const delta = e.clientX - startX; // dragging right edge: pulling right = wider
             const newW  = Math.min(MAX_W, Math.max(MIN_W, startWidth + delta));
             tower.style.width = newW + 'px';
         });
@@ -95,7 +95,7 @@ export function setupTowerResize() {
 
         window.addEventListener('touchmove', (e) => {
             if (!dragging) return;
-            const delta = startX - e.touches[0].clientX;
+            const delta = e.touches[0].clientX - startX;
             const newW  = Math.min(MAX_W, Math.max(MIN_W, startWidth + delta));
             tower.style.width = newW + 'px';
         }, { passive: true });

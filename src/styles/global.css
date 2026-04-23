@@ -1421,7 +1421,7 @@ label {
 .tower-resize-handle {
     position: absolute;
     top: 0;
-    left: 0;
+    right: 0;
     width: 4px;
     height: 100%;
     cursor: ew-resize;
