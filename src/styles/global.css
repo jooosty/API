@@ -1364,3 +1364,81 @@ label {
         display: none; /* PiP not reliable on mobile */
     }
 }
+
+/* ── Tower resize & collapse ─────────────────────────────────── */
+
+.tower-close-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: #444;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0 2px;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: color 0.15s;
+}
+
+.tower-close-btn:hover {
+    color: #fff;
+    background: none;
+}
+
+/* When tower header doesn't already use flex, force it */
+.tower-header {
+    display: flex !important;
+    align-items: center;
+}
+
+.tower-collapsed > *:not(.tower-header) {
+    display: none !important;
+}
+
+.tower-collapsed {
+    min-width: 0 !important;
+    width: auto !important;
+    overflow: hidden;
+}
+
+.tower-collapsed .tower-header {
+    cursor: pointer;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    padding: 12px 6px;
+    gap: 0;
+    white-space: nowrap;
+    justify-content: flex-start;
+    min-height: 80px;
+}
+
+.tower-collapsed .tower-close-btn {
+    writing-mode: horizontal-tb;
+    margin: 4px auto 0;
+}
+
+/* Drag handle — thin strip on the left edge */
+.tower-resize-handle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    cursor: ew-resize;
+    background: transparent;
+    transition: background 0.15s;
+    z-index: 5;
+}
+
+.tower-resize-handle:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* Make towers position:relative so handle can be absolute */
+#live-lap-tower,
+#pit-tower,
+#overtake-tower,
+#race-control-tower,
+#comparison-panel {
+    position: relative;
+}

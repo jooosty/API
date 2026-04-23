@@ -110,7 +110,7 @@
 
 <script>
     import * as THREE from 'three';
-    import { createScene, createCamera, createRenderer, resizeRenderer, buildCoordTransform, buildTrackGeometry, buildDriverDots, setupDotClickDetection } from '../scripts/track-scene.js';
+    import { createScene, createCamera, createRenderer, buildCoordTransform, buildTrackGeometry, buildDriverDots, setupDotClickDetection } from '../scripts/track-scene.js';
     import { setupDriverTrails } from '../scripts/track-overlays.js';
     import { setupCameraControls } from '../scripts/track-camera.js';
     import { createApiFetcher, fetchSessionData, fetchTowerData, buildDriverInfoMap, fetchLocationData } from '../scripts/track-data.js';
@@ -118,22 +118,16 @@
     import { setupTelemetry } from '../scripts/track-telemetry.js';
     import { setupPlayback } from '../scripts/track-playback.js';
     import { setupComparison } from '../scripts/session-comparison.js';
+    import { setupTowerResize } from '../scripts/tower-resize.js';
     import { showPodium, hidePodium } from '../scripts/podium-screen.js';
 
     const scene    = createScene();
     const camera   = createCamera();
     const renderer = createRenderer();
-    const trackContainer = document.getElementById('track-container');
-    trackContainer?.appendChild(renderer.domElement);
+    // Set up tower resize/collapse — runs once, persists across session loads
+    setupTowerResize();
 
-    // Resize renderer when container size changes
-    const resizeObs = new ResizeObserver(() => {
-        if (trackContainer) resizeRenderer(renderer, camera, trackContainer);
-    });
-    if (trackContainer) {
-        resizeObs.observe(trackContainer);
-        resizeRenderer(renderer, camera, trackContainer);
-    }
+    document.getElementById('track-container')?.appendChild(renderer.domElement);
 
     // ── Picture in Picture ────────────────────────────────────
     document.getElementById('pip-button')?.addEventListener('click', async () => {
@@ -342,6 +336,4 @@
     document.getElementById('load-track-button')?.addEventListener('click', async () => {
         await startTrackLoad();
     });
-
-    import '../scripts/easter-eggs.js';
 </script>
