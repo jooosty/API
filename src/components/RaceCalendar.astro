@@ -138,6 +138,48 @@
     if (e.key === "ArrowRight") slideTo(currentIndex + 1);
   });
 
+  // ── Touch / mouse drag scrolling ──────────────────────────
+  const trackOuter = document.querySelector(".carousel-track-outer");
+  let dragStartX   = 0;
+  let dragDeltaX   = 0;
+  let isDragging   = false;
+
+  function onDragStart(x) {
+    isDragging  = true;
+    dragStartX  = x;
+    dragDeltaX  = 0;
+    track.style.transition = "none"; // disable transition while dragging
+  }
+
+  function onDragMove(x) {
+    if (!isDragging) return;
+    dragDeltaX = x - dragStartX;
+    // Live-drag the track
+    const baseOffset = currentIndex * (CARD_WIDTH + CARD_GAP);
+    track.style.transform = `translateX(${-baseOffset + dragDeltaX}px)`;
+  }
+
+  function onDragEnd() {
+    if (!isDragging) return;
+    isDragging = false;
+    track.style.transition = ""; // restore CSS transition
+
+    // Calculate how many cards were dragged across, then snap to nearest
+    const cardSize   = CARD_WIDTH + CARD_GAP;
+    const cardsMoved = Math.round(-dragDeltaX / cardSize);
+    slideTo(currentIndex + cardsMoved);
+  }
+
+  // Mouse events
+  trackOuter.addEventListener("mousedown",  e => { e.preventDefault(); onDragStart(e.clientX); });
+  window.addEventListener("mousemove",      e => { onDragMove(e.clientX); });
+  window.addEventListener("mouseup",        ()  => { onDragEnd(); });
+
+  // Touch events
+  trackOuter.addEventListener("touchstart", e => { onDragStart(e.touches[0].clientX); }, { passive: true });
+  trackOuter.addEventListener("touchmove",  e => { onDragMove(e.touches[0].clientX); },  { passive: true });
+  trackOuter.addEventListener("touchend",   ()  => { onDragEnd(); });
+
   async function loadCalendar(year) {
     track.innerHTML = '<div class="calendar-loading">Loading calendar...</div>';
     track.style.transform = "translateX(0)";

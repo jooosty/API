@@ -1254,3 +1254,14 @@ label {
     border-color: #666;
     color: #fff;
 }
+
+/* ── Carousel drag scroll ────────────────────────────────────── */
+
+.carousel-track-outer {
+    cursor: grab;
+    user-select: none;
+}
+
+.carousel-track-outer:active {
+    cursor: grabbing;
+}
