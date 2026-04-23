@@ -46,23 +46,15 @@
     Race: { short: "R", cls: "race" },
   };
 
+  const CARD_WIDTH = 300;
   const CARD_GAP = 12;
+  const CARDS_VISIBLE = 3;
+
   let currentIndex = 0;
   let totalCards = 0;
 
-  const track       = document.getElementById("calendar-track");
-  const dotsEl      = document.getElementById("carousel-dots");
-  const trackOuter  = document.querySelector(".carousel-track-outer");
-
-  // Derive card width and visible count from container width
-  function getCardMetrics() {
-      const containerW = trackOuter?.clientWidth || window.innerWidth;
-      const cardW = Math.min(300, Math.max(220, Math.floor((containerW - CARD_GAP * 2) / 3)));
-      const visible = Math.max(1, Math.floor((containerW + CARD_GAP) / (cardW + CARD_GAP)));
-      return { cardW, visible };
-  }
-
-  function getMetrics() { return getCardMetrics(); }
+  const track = document.getElementById("calendar-track");
+  const dotsEl = document.getElementById("carousel-dots");
 
   function formatDate(iso) {
     if (!iso) return "";
@@ -114,9 +106,8 @@
   }
 
   function slideTo(index) {
-    const { cardW, visible } = getMetrics();
-    currentIndex = Math.max(0, Math.min(index, totalCards - visible));
-    const offset = currentIndex * (cardW + CARD_GAP);
+    currentIndex = Math.max(0, Math.min(index, totalCards - CARDS_VISIBLE));
+    const offset = currentIndex * (CARD_WIDTH + CARD_GAP);
     track.style.transform = `translateX(-${offset}px)`;
     document.querySelectorAll(".carousel-dot").forEach((dot, i) => {
       dot.classList.toggle("active", i === currentIndex);
@@ -124,9 +115,8 @@
   }
 
   function buildDots(count) {
-    const { visible } = getMetrics();
     dotsEl.innerHTML = "";
-    const dotCount = Math.max(0, count - visible + 1);
+    const dotCount = Math.max(0, count - CARDS_VISIBLE + 1);
     for (let i = 0; i < dotCount; i++) {
       const dot = document.createElement("button");
       dot.className = "carousel-dot" + (i === 0 ? " active" : "");
@@ -149,6 +139,7 @@
   });
 
   // ── Touch / mouse drag scrolling ──────────────────────────
+  const trackOuter = document.querySelector(".carousel-track-outer");
   let dragStartX   = 0;
   let dragDeltaX   = 0;
   let isDragging   = false;
@@ -157,35 +148,29 @@
     isDragging  = true;
     dragStartX  = x;
     dragDeltaX  = 0;
-    track.style.transition = "none"; // disable transition while dragging
+    track.style.transition = "none";
   }
 
   function onDragMove(x) {
     if (!isDragging) return;
     dragDeltaX = x - dragStartX;
-    // Live-drag the track
-    const { cardW } = getMetrics();
-    const baseOffset = currentIndex * (cardW + CARD_GAP);
+    const cardSize   = 300 + 12;
+    const baseOffset = currentIndex * cardSize;
     track.style.transform = `translateX(${-baseOffset + dragDeltaX}px)`;
   }
 
   function onDragEnd() {
     if (!isDragging) return;
     isDragging = false;
-    track.style.transition = ""; // restore CSS transition
-
-    // Calculate how many cards were dragged across, then snap to nearest
-    const { cardW } = getMetrics();
-    const cardsMoved = Math.round(-dragDeltaX / (cardW + CARD_GAP));
+    track.style.transition = "";
+    const cardsMoved = Math.round(-dragDeltaX / (300 + 12));
     slideTo(currentIndex + cardsMoved);
   }
 
-  // Mouse events
   trackOuter.addEventListener("mousedown",  e => { e.preventDefault(); onDragStart(e.clientX); });
   window.addEventListener("mousemove",      e => { onDragMove(e.clientX); });
   window.addEventListener("mouseup",        ()  => { onDragEnd(); });
 
-  // Touch events
   trackOuter.addEventListener("touchstart", e => { onDragStart(e.touches[0].clientX); }, { passive: true });
   trackOuter.addEventListener("touchmove",  e => { onDragMove(e.touches[0].clientX); },  { passive: true });
   trackOuter.addEventListener("touchend",   ()  => { onDragEnd(); });
@@ -203,6 +188,11 @@
 
     meetings.sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
 
+    // Remove pre-season testing
+    const filteredMeetings = meetings.filter(m => !m.meeting_name?.toLowerCase().includes('test'));
+    meetings.length = 0;
+    filteredMeetings.forEach(m => meetings.push(m));
+
     const sessionsByMeeting = {};
     for (const s of sessions) {
       if (!sessionsByMeeting[s.meeting_key])
@@ -218,9 +208,6 @@
     const now = Date.now();
     totalCards = meetings.length;
     track.innerHTML = "";
-    // Update card widths dynamically
-    const { cardW: cw } = getMetrics();
-    document.querySelectorAll('.race-card').forEach(c => { c.style.flexBasis = cw + 'px'; });
 
     let nextFound = false;
 
@@ -360,18 +347,7 @@
     });
 
     buildDots(totalCards);
-    // Apply computed card width to all cards
-    const { cardW: finalCW } = getMetrics();
-    document.querySelectorAll('.race-card').forEach(c => { c.style.flexBasis = finalCW + 'px'; c.style.minWidth = finalCW + 'px'; });
   }
-
-  // Re-slide on resize so carousel doesn't break layout
-  window.addEventListener('resize', () => {
-    slideTo(currentIndex);
-    buildDots(totalCards);
-    const { cardW: rw } = getMetrics();
-    document.querySelectorAll('.race-card').forEach(c => { c.style.flexBasis = rw + 'px'; c.style.minWidth = rw + 'px'; });
-  });
 
   document.querySelectorAll(".year-tab").forEach((tab) => {
     tab.addEventListener("click", () => {
