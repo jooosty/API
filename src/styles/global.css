@@ -376,6 +376,7 @@ label {
 
 
 #interval-tower {
+    font-size: 13px;
     position: absolute;
     top: 0;
     left: 0;
@@ -398,6 +399,7 @@ label {
 /* ── Live lap tower (outside, right of canvas) ───────────────── */
 
 #live-lap-tower {
+    font-size: 13px;
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -413,7 +415,7 @@ label {
 
 .tower-header {
     text-align: center;
-    font-size: 10px;
+    font-size: 0.77em;
     color: var(--text-muted);
     padding: 4px 8px;
     letter-spacing: 0.12em;
@@ -445,7 +447,7 @@ label {
     color: var(--text-muted);
     text-align: center;
     padding: 24px 0;
-    font-size: 11px;
+    font-size: 0.85em;
     letter-spacing: 0.06em;
 }
 
@@ -798,6 +800,7 @@ label {
 /* ── Pit stop tower ──────────────────────────────────────────── */
 
 #pit-tower {
+    font-size: 13px;
     width: 180px;
     height: clamp(300px, 60vh, 600px);
     background: rgba(14, 14, 14, 0.82);
@@ -825,6 +828,7 @@ label {
 /* ── Overtakes tower ─────────────────────────────────────────── */
 
 #overtake-tower {
+    font-size: 13px;
     width: 150px;
     height: clamp(300px, 60vh, 600px);
     background: rgba(14, 14, 14, 0.82);
@@ -852,6 +856,7 @@ label {
 /* ── Race control tower ──────────────────────────────────────── */
 
 #race-control-tower {
+    font-size: 13px;
     width: 175px;
     height: clamp(300px, 60vh, 600px);
     background: rgba(14, 14, 14, 0.82);
@@ -879,6 +884,7 @@ label {
 /* ── Session comparison panel ────────────────────────────────── */
 
 #comparison-panel {
+    font-size: 13px;
     width: 340px;
     height: clamp(300px, 60vh, 600px);
     background: rgba(14, 14, 14, 0.82);
@@ -1440,5 +1446,6 @@ label {
 #overtake-tower,
 #race-control-tower,
 #comparison-panel {
+    font-size: 13px;
     position: relative;
 }

@@ -18,6 +18,16 @@ const TOWER_IDS = [
 
 const MIN_W = 80;
 const MAX_W = 500;
+const BASE_FONT = 13;  // px — matches the font-size set in CSS
+
+// Default widths match CSS definitions
+const DEFAULT_WIDTHS = {
+    'live-lap-tower':     190,
+    'pit-tower':          180,
+    'overtake-tower':     150,
+    'race-control-tower': 175,
+    'comparison-panel':   340,
+};
 
 export function setupTowerResize() {
     TOWER_IDS.forEach(id => {
@@ -74,9 +84,12 @@ export function setupTowerResize() {
 
         window.addEventListener('mousemove', (e) => {
             if (!dragging) return;
-            const delta = e.clientX - startX; // dragging right edge: pulling right = wider
-            const newW  = Math.min(MAX_W, Math.max(MIN_W, startWidth + delta));
-            tower.style.width = newW + 'px';
+            const delta   = e.clientX - startX;
+            const newW    = Math.min(MAX_W, Math.max(MIN_W, startWidth + delta));
+            const defaultW = DEFAULT_WIDTHS[id] || 175;
+            const newFont  = Math.max(9, Math.min(16, Math.round(BASE_FONT * (newW / defaultW))));
+            tower.style.width    = newW + 'px';
+            tower.style.fontSize = newFont + 'px';
         });
 
         window.addEventListener('mouseup', () => {
@@ -95,9 +108,12 @@ export function setupTowerResize() {
 
         window.addEventListener('touchmove', (e) => {
             if (!dragging) return;
-            const delta = e.touches[0].clientX - startX;
-            const newW  = Math.min(MAX_W, Math.max(MIN_W, startWidth + delta));
-            tower.style.width = newW + 'px';
+            const delta    = e.touches[0].clientX - startX;
+            const newW     = Math.min(MAX_W, Math.max(MIN_W, startWidth + delta));
+            const defaultW = DEFAULT_WIDTHS[id] || 175;
+            const newFont  = Math.max(9, Math.min(16, Math.round(BASE_FONT * (newW / defaultW))));
+            tower.style.width    = newW + 'px';
+            tower.style.fontSize = newFont + 'px';
         }, { passive: true });
 
         window.addEventListener('touchend', () => { dragging = false; });
