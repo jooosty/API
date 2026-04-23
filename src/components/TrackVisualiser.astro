@@ -21,6 +21,12 @@
 <div class="visualiser-layout">
     <div class="track-wrap">
         <div id="track-container"></div>
+        <div id="loading-overlay" class="loading-overlay tower-hidden">
+            <video id="loading-video" class="loading-video" playsinline>
+                <source id="loading-video-src" src="" type="video/mp4">
+            </video>
+            <div id="loading-status" class="loading-status"></div>
+        </div>
         <div id="interval-tower" class="tower-hidden">
             <div class="tower-header tower-header--split">
                 <span>Intervals</span>
@@ -101,7 +107,7 @@
 
 <script>
     import * as THREE from 'three';
-    import { createScene, createCamera, createRenderer, createLoadingSprite, buildCoordTransform, buildTrackGeometry, buildDriverDots, setupDotClickDetection } from '../scripts/track-scene.js';
+    import { createScene, createCamera, createRenderer, buildCoordTransform, buildTrackGeometry, buildDriverDots, setupDotClickDetection } from '../scripts/track-scene.js';
     import { setupDriverTrails } from '../scripts/track-overlays.js';
     import { setupCameraControls } from '../scripts/track-camera.js';
     import { createApiFetcher, fetchSessionData, fetchTowerData, buildDriverInfoMap, fetchLocationData } from '../scripts/track-data.js';
@@ -137,30 +143,70 @@
         // Stop the previous session's animation loop before starting a new one
         if (currentPlayback) { currentPlayback.destroy(); currentPlayback = null; }
         setLoadControls(true);
-        try { await loadTrack(); } finally { setLoadControls(false); }
+        try { await loadTrack(); } finally {
+            setLoadControls(false);
+        }
     }
 
     async function loadTrack() {
         const sessionKey = currentSessionKey;
         if (!sessionKey) { alert('Please select a session first.'); return; }
 
-        const { sprite: loadingSprite, setText: setLoadingText } = createLoadingSprite(scene, camera, renderer);
-
-        setLoadingText('Fetching session...');
+        // Clear previous scene, no loading sprite — theme music plays instead
         scene.clear();
         scene.background = new THREE.Color(0x1a1a1a);
-        scene.add(loadingSprite);
         renderer.render(scene, camera);
 
+        // Show loading video overlay
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const loadingVideo   = document.getElementById('loading-video');
+        const loadingVideoSrc = document.getElementById('loading-video-src');
+        const loadingStatus  = document.getElementById('loading-status');
+
+        // Pick theme video by current year — will retune once session year is known
+        const THEME_VIDEOS = { 2023: '/themes/2023-F1.mp4', 2024: '/themes/2024-F1.mp4', 2025: '/themes/2025-F1.mp4' };
+        function setThemeVideo(year) {
+            const src = THEME_VIDEOS[Number(year)] || '/themes/2025-F1.mp4';
+            if (loadingVideoSrc && loadingVideo && loadingVideoSrc.src !== location.origin + src) {
+                loadingVideoSrc.src = src;
+                loadingVideo.load();
+                loadingVideo.play().catch(() => {});
+            }
+        }
+
+        setThemeVideo(new Date().getFullYear());
+        if (loadingOverlay) loadingOverlay.classList.remove('tower-hidden');
+
+        const setLoadingText = (msg) => {
+            console.debug('[loading]', msg);
+            if (loadingStatus) loadingStatus.textContent = msg;
+        };
         const apiFetch = createApiFetcher(setLoadingText);
 
         // ── Fetch all data ────────────────────────────────────
         const { sessionData, driversData, isPractice, isQualifying } = await fetchSessionData(apiFetch, sessionKey, setLoadingText);
+        // Re-tune video to the session's actual year
+        if (sessionData[0]?.year) setThemeVideo(sessionData[0].year);
         const towerData = await fetchTowerData(apiFetch, sessionKey, isPractice, isQualifying, setLoadingText);
         const driverInfoMap = buildDriverInfoMap(driversData);
         const allDriverLocationData = await fetchLocationData(apiFetch, sessionKey, sessionData, driversData, setLoadingText);
 
-        scene.remove(loadingSprite);
+
+        // Wait for video to finish before revealing the session
+        if (loadingVideo && !loadingVideo.ended) {
+            loadingVideo.loop = false;
+            // If video hasn't started (autoplay blocked) just skip wait
+            await new Promise(resolve => {
+                if (loadingVideo.ended || loadingVideo.paused && loadingVideo.currentTime === 0) {
+                    resolve();
+                } else {
+                    loadingVideo.addEventListener('ended', resolve, { once: true });
+                    // Safety timeout — never block longer than video duration or 30s
+                    setTimeout(resolve, Math.max((loadingVideo.duration || 30) * 1000, 30000));
+                }
+            });
+        }
+        if (loadingOverlay) loadingOverlay.classList.add('tower-hidden');
 
         // ── Build scene ───────────────────────────────────────
         const toTrackPoint = buildCoordTransform(allDriverLocationData);

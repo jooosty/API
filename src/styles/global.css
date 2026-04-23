@@ -1017,3 +1017,34 @@ label {
     color: #fff;
     background: none;
 }
+
+/* ── Loading overlay ─────────────────────────────────────────── */
+
+.loading-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: #000;
+}
+
+.loading-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.loading-status {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--mono);
+    font-size: 10px;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+    pointer-events: none;
+}
