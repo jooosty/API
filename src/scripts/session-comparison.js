@@ -114,7 +114,7 @@ export function setupComparison(allLapData, allStintData, driverInfoMap) {
         const dot = document.createElement('span');
         dot.style.cssText = `display:inline-block;width:8px;height:8px;border-radius:50%;background:${info.colour};`;
         const title = document.createElement('span');
-        title.style.cssText = 'font-size:11px;font-weight:700;letter-spacing:0.06em;color:#fff;';
+        title.style.cssText = 'font-size:13px;font-weight:700;letter-spacing:0.06em;color:#fff;';
         title.textContent = info.acronym + ' — Lap Times';
         header.appendChild(dot);
         header.appendChild(title);
@@ -122,7 +122,7 @@ export function setupComparison(allLapData, allStintData, driverInfoMap) {
 
         if (laps.length === 0) {
             const empty = document.createElement('div');
-            empty.style.cssText = 'font-size:10px;color:#555;padding:8px 0;';
+            empty.style.cssText = 'font-size:12px;color:#555;padding:8px 0;';
             empty.textContent = 'No completed laps yet';
             wrap.appendChild(empty);
             return wrap;
@@ -195,7 +195,7 @@ export function setupComparison(allLapData, allStintData, driverInfoMap) {
         wrap.style.cssText = 'margin-top:16px;';
 
         const title = document.createElement('div');
-        title.style.cssText = 'font-size:10px;color:#555;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;';
+        title.style.cssText = 'font-size:12px;color:#555;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;';
         title.textContent = 'Sector Comparison — Best Sectors';
         wrap.appendChild(title);
 
@@ -219,7 +219,7 @@ export function setupComparison(allLapData, allStintData, driverInfoMap) {
         const { best: b2 } = bestSectors(dn2);
 
         const table = document.createElement('table');
-        table.style.cssText = 'width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px;';
+        table.style.cssText = 'width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;';
 
         // Header
         const thead = document.createElement('thead');
@@ -251,7 +251,7 @@ export function setupComparison(allLapData, allStintData, driverInfoMap) {
             tr.innerHTML = `
                 <td style="padding:5px 8px;color:#666;font-weight:700;">${label}</td>
                 <td style="text-align:right;padding:5px 8px;color:${winner===1?'#fff':'#666'};font-weight:${winner===1?'700':'400'};">${fmtSec(v1)}</td>
-                <td style="text-align:center;padding:5px 4px;color:#333;font-size:8px;">vs</td>
+                <td style="text-align:center;padding:5px 4px;color:#333;font-size:10px;">vs</td>
                 <td style="text-align:left;padding:5px 8px;color:${winner===2?'#fff':'#666'};font-weight:${winner===2?'700':'400'};">${fmtSec(v2)}</td>
                 <td style="text-align:right;padding:5px 8px;color:${deltaColor};font-weight:700;">${deltaStr}</td>`;
             tbody.appendChild(tr);

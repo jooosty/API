@@ -22,11 +22,11 @@ const BASE_FONT = 13;  // px — matches the font-size set in CSS
 
 // Default widths match CSS definitions
 const DEFAULT_WIDTHS = {
-    'live-lap-tower':     190,
-    'pit-tower':          180,
-    'overtake-tower':     150,
-    'race-control-tower': 175,
-    'comparison-panel':   340,
+    'live-lap-tower':     215,
+    'pit-tower':          205,
+    'overtake-tower':     175,
+    'race-control-tower': 200,
+    'comparison-panel':   370,
 };
 
 export function setupTowerResize() {

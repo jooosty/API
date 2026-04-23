@@ -1,6 +1,6 @@
 import { buildTowerRow } from './tower-base.js';
 
-export function updatePracticeTower(currentSimTime, intervalRows, allLapData, driverInfoMap, onPrimaryClick = null, onSecondaryClick = null) {
+export function updatePracticeTower(currentSimTime, intervalRows, allLapData, driverInfoMap) {
     const bestLap = {};
     const lastLap = {};
     const lapCount = {};
@@ -62,14 +62,10 @@ export function updatePracticeTower(currentSimTime, intervalRows, allLapData, dr
         // inject lap count badge after acronym
         const acronymEl = rowEl.querySelectorAll('span')[2];
         const lapBadge = document.createElement('span');
-        lapBadge.style.cssText = 'font-size:10px;color:#555;min-width:20px;text-align:center;';
+        lapBadge.style.cssText = 'font-size:12px;color:#555;min-width:20px;text-align:center;';
         lapBadge.textContent = `L${laps}`;
         acronymEl.after(lapBadge);
 
-        rowEl.style.cursor = 'pointer';
-        rowEl.title = 'Left click: telemetry  |  Right click: compare';
-        rowEl.addEventListener('click', () => { if (onPrimaryClick) onPrimaryClick(dn); });
-        rowEl.addEventListener('contextmenu', e => { e.preventDefault(); if (onSecondaryClick) onSecondaryClick(dn); });
         intervalRows.appendChild(rowEl);
     });
 }

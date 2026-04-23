@@ -67,7 +67,7 @@ export function updateRaceControlTower(currentSimTime, container, allRaceControl
         topLine.style.cssText = 'display:flex;align-items:center;gap:4px;margin-bottom:2px;';
 
         const badge = document.createElement('span');
-        badge.style.cssText = `font-size:8px;font-weight:700;letter-spacing:0.1em;padding:1px 4px;border-radius:2px;background:${style.bg};color:${style.color};border:1px solid ${style.color};flex-shrink:0;`;
+        badge.style.cssText = `font-size:10px;font-weight:700;letter-spacing:0.1em;padding:1px 4px;border-radius:2px;background:${style.bg};color:${style.color};border:1px solid ${style.color};flex-shrink:0;`;
         badge.textContent = style.label;
         topLine.appendChild(badge);
 
@@ -87,7 +87,7 @@ export function updateRaceControlTower(currentSimTime, container, allRaceControl
                 const dot = document.createElement('span');
                 dot.style.cssText = `display:inline-block;width:5px;height:5px;border-radius:50%;background:${info.colour};flex-shrink:0;`;
                 const name = document.createElement('span');
-                name.style.cssText = 'font-size:9px;color:#aaa;font-weight:600;';
+                name.style.cssText = 'font-size:11px;color:#aaa;font-weight:600;';
                 name.textContent = info.acronym;
                 driverTag.appendChild(dot);
                 driverTag.appendChild(name);
@@ -95,7 +95,7 @@ export function updateRaceControlTower(currentSimTime, container, allRaceControl
             }
         } else if (e.scope === 'Sector' && e.sector) {
             const sectorTag = document.createElement('span');
-            sectorTag.style.cssText = 'font-size:9px;color:#555;';
+            sectorTag.style.cssText = 'font-size:11px;color:#555;';
             sectorTag.textContent = 'S' + e.sector;
             topLine.appendChild(sectorTag);
         }
@@ -105,7 +105,7 @@ export function updateRaceControlTower(currentSimTime, container, allRaceControl
         // Message text
         if (e.message) {
             const msg = document.createElement('div');
-            msg.style.cssText = 'font-size:9px;color:#bbb;line-height:1.3;word-break:break-word;';
+            msg.style.cssText = 'font-size:11px;color:#bbb;line-height:1.3;word-break:break-word;';
             msg.textContent = e.message;
             row.appendChild(msg);
         }

@@ -1,23 +1,22 @@
 const TEAM_SLUGS = {
-    // 2025
-    'Red Bull Racing':              'red-bull-racing',
-    'Ferrari':                      'ferrari',
-    'Mercedes':                     'mercedes',
-    'McLaren':                      'mclaren',
-    'Aston Martin':                 'aston-martin',
-    'Alpine':                       'alpine',
-    'Williams':                     'williams',
-    'Racing Bulls':                 'racing-bulls',
-    'Kick Sauber':                  'kick-sauber',
-    'Haas F1 Team':                 'haas',
-    'Visa Cash App RB F1 Team':     'rb',
-    'Stake F1 Team Kick Sauber':    'kick-sauber',
-    'RB':                           'rb',
-    'AlphaTauri':                   'alphatauri',
-    'Alfa Romeo':                   'alfa-romeo',
-    'Racing Point':                 'racing-point',
-    'Renault':                      'renault',
-    'Toro Rosso':                   'toro-rosso',
+    'Red Bull Racing': 'red-bull-racing',
+    'Ferrari':         'ferrari',
+    'Mercedes':        'mercedes',
+    'McLaren':         'mclaren',
+    'Aston Martin':    'aston-martin',
+    'Alpine':          'alpine',
+    'Williams':        'williams',
+    'Racing Bulls':    'racing-bulls',
+    'Kick Sauber':     'kick-sauber',
+    'Haas F1 Team':    'haas',
+    'Visa Cash App RB F1 Team': 'rb',
+    'Stake F1 Team Kick Sauber': 'kick-sauber',
+    'RB':              'rb',
+    'AlphaTauri':      'alphatauri',
+    'Alfa Romeo':      'alfa-romeo',
+    'Racing Point':    'racing-point',
+    'Renault':         'renault',
+    'Toro Rosso':      'toro-rosso',
 };
 
 export function teamLogoUrl(teamName, year = 2025) {
@@ -31,12 +30,13 @@ export function teamLogoUrl(teamName, year = 2025) {
 
 export function buildTowerRow({ position, colour, acronym, mainText, mainColor, subText, subColor, teamLogoUrl: logoUrl, headshotUrl }) {
     const rowEl = document.createElement('div');
-    rowEl.style.cssText = 'display:flex;align-items:center;gap:4px;padding:4px 5px;border-bottom:1px solid #1e1e1e;';
+    rowEl.style.cssText = 'display:flex;align-items:center;gap:5px;padding:4px 6px;border-bottom:1px solid #1e1e1e;';
 
     const posEl = document.createElement('span');
-    posEl.style.cssText = 'color:#666;font-size:10px;min-width:14px;text-align:right;flex-shrink:0;';
+    posEl.style.cssText = 'color:#666;font-size:13px;min-width:16px;text-align:right;flex-shrink:0;';
     posEl.textContent = String(position);
 
+    // Avatar: headshot > team logo > colour dot
     let avatar;
     if (headshotUrl) {
         avatar = document.createElement('img');
@@ -50,18 +50,18 @@ export function buildTowerRow({ position, colour, acronym, mainText, mainColor, 
     }
 
     const acronymEl = document.createElement('span');
-    acronymEl.style.cssText = 'font-weight:bold;font-size:11px;min-width:28px;letter-spacing:0.03em;';
+    acronymEl.style.cssText = 'font-weight:bold;font-size:14px;min-width:34px;letter-spacing:0.04em;';
     acronymEl.textContent = acronym;
 
     const rightCol = document.createElement('div');
     rightCol.style.cssText = 'margin-left:auto;text-align:right;display:flex;flex-direction:column;gap:1px;';
 
     const mainEl = document.createElement('span');
-    mainEl.style.cssText = `font-size:11px;color:${mainColor};`;
+    mainEl.style.cssText = `font-size:13px;color:${mainColor};`;
     mainEl.textContent = mainText;
 
     const subEl = document.createElement('span');
-    subEl.style.cssText = `font-size:10px;color:${subColor || '#555'};`;
+    subEl.style.cssText = `font-size:12px;color:${subColor || '#555'};`;
     subEl.textContent = subText || '';
 
     rightCol.appendChild(mainEl);

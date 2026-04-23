@@ -33,7 +33,7 @@ body {
 /* ── Typography ──────────────────────────────────────────────── */
 
 h2 {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--text-dim);
     letter-spacing: 0.08em;
@@ -65,7 +65,7 @@ hr {
 select,
 button {
     font-family: inherit;
-    font-size: 12px;
+    font-size: 14px;
     border-radius: var(--radius);
     border: 1px solid var(--border);
     outline: none;
@@ -119,7 +119,7 @@ button.primary:hover:not(:disabled) {
 }
 
 label {
-    font-size: 12px;
+    font-size: 14px;
     color: var(--text-dim);
 }
 
@@ -137,7 +137,7 @@ label {
 }
 
 .active-session-label {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
     color: var(--accent);
     letter-spacing: 0.06em;
@@ -192,7 +192,7 @@ label {
 #time-display,
 #time-total {
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 14px;
     color: var(--text-dim);
     min-width: 48px;
 }
@@ -247,14 +247,14 @@ label {
 }
 
 .radio-acronym {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 700;
     color: #fff;
     letter-spacing: 0.05em;
 }
 
 .radio-live-badge {
-    font-size: 9px;
+    font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.12em;
     padding: 2px 6px;
@@ -270,7 +270,7 @@ label {
     background: none;
     border: none;
     color: var(--text-muted);
-    font-size: 11px;
+    font-size: 13px;
     padding: 2px 4px;
     cursor: pointer;
     line-height: 1;
@@ -289,7 +289,7 @@ label {
 }
 
 .radio-play-btn {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.04em;
     padding: 4px 10px;
@@ -320,7 +320,7 @@ label {
 }
 
 .radio-time {
-    font-size: 10px;
+    font-size: 12px;
     color: var(--text-muted);
     min-width: 28px;
     text-align: right;
@@ -343,7 +343,7 @@ label {
     border-left: 1px solid var(--border);
     border-radius: var(--radius) 0 0 0;
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: 13px;
     color: var(--text);
     z-index: 10;
 }
@@ -354,7 +354,7 @@ label {
 }
 
 .wx-label {
-    font-size: 9px;
+    font-size: 13px;
     color: var(--text-muted);
     letter-spacing: 0.08em;
     margin-left: -7px;
@@ -362,7 +362,7 @@ label {
 }
 
 .wx-rain-badge {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.1em;
     padding: 2px 7px;
@@ -376,11 +376,11 @@ label {
 
 
 #interval-tower {
-    font-size: 13px;
+    font-size: 15px;
     position: absolute;
     top: 0;
     left: 0;
-    width: 195px;
+    width: 220px;
     bottom: 40px; /* stops above the timeline row */
     height: auto;
     background: rgba(14, 14, 14, 0.82);
@@ -390,7 +390,7 @@ label {
     border-radius: var(--radius) 0 0 var(--radius);
     color: #fff;
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: 15px;
     padding: 8px 0;
     overflow: hidden;
     z-index: 10;
@@ -399,15 +399,15 @@ label {
 /* ── Live lap tower (outside, right of canvas) ───────────────── */
 
 #live-lap-tower {
-    font-size: 13px;
+    font-size: 15px;
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     color: #fff;
-    width: 190px;
+    width: 215px;
     height: 600px;
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: 15px;
     padding: 8px 0;
     flex-shrink: 0;
     overflow: hidden;
@@ -424,7 +424,7 @@ label {
 
 #phase-indicator {
     text-align: center;
-    font-size: 13px;
+    font-size: 15px;
     font-weight: bold;
     padding: 4px 8px 8px;
     border-bottom: 1px solid var(--border);
@@ -488,7 +488,7 @@ label {
 }
 
 .calendar-hero-intro p {
-    font-size: 13px;
+    font-size: 15px;
     color: var(--text-muted);
     letter-spacing: 0.05em;
 }
@@ -533,7 +533,7 @@ label {
 }
 
 .year-tab {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 600;
     letter-spacing: 0.06em;
     padding: 5px 14px;
@@ -557,7 +557,7 @@ label {
 
 .calendar-loading {
     color: var(--text-muted);
-    font-size: 13px;
+    font-size: 15px;
     padding: 40px 0;
     text-align: center;
     letter-spacing: 0.06em;
@@ -629,7 +629,7 @@ label {
     border-radius: var(--radius);
     overflow: hidden;
     transition: border-color 0.15s;
-    flex: 0 0 300px; /* overridden by JS dynamically */
+    flex: 0 0 320px; /* overridden by JS dynamically */
     min-width: 220px;
     max-width: 300px;
 }
@@ -654,7 +654,7 @@ label {
 
 .race-round {
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--text-muted);
     letter-spacing: 0.06em;
@@ -670,7 +670,7 @@ label {
 }
 
 .race-name {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--text);
     flex: 1;
@@ -681,7 +681,7 @@ label {
 
 .race-date-range {
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: 12px;
     color: var(--text-muted);
     flex-shrink: 0;
 }
@@ -692,7 +692,7 @@ label {
     right: -1px;
     background: var(--accent);
     color: #fff;
-    font-size: 9px;
+    font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.1em;
     padding: 2px 7px;
@@ -733,7 +733,7 @@ label {
 
 .session-badge {
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.06em;
     padding: 2px 6px;
@@ -750,7 +750,7 @@ label {
 .session-other    .session-badge  { background: var(--bg-input); color: var(--text-muted); }
 
 .session-name {
-    font-size: 11px;
+    font-size: 13px;
     color: var(--text-dim);
     white-space: nowrap;
     overflow: hidden;
@@ -767,18 +767,18 @@ label {
 
 .session-date {
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: 12px;
     color: var(--text-dim);
 }
 
 .session-time {
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: 12px;
     color: var(--text-muted);
 }
 
 .session-load-btn {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.06em;
     padding: 3px 10px;
@@ -800,15 +800,15 @@ label {
 /* ── Pit stop tower ──────────────────────────────────────────── */
 
 #pit-tower {
-    font-size: 13px;
-    width: 180px;
+    font-size: 15px;
+    width: 205px;
     height: clamp(300px, 60vh, 600px);
     background: rgba(14, 14, 14, 0.82);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     color: #fff;
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: 15px;
     padding: 8px 0;
     flex-shrink: 0;
     overflow: hidden;
@@ -828,15 +828,15 @@ label {
 /* ── Overtakes tower ─────────────────────────────────────────── */
 
 #overtake-tower {
-    font-size: 13px;
-    width: 150px;
+    font-size: 15px;
+    width: 200px;
     height: clamp(300px, 60vh, 600px);
     background: rgba(14, 14, 14, 0.82);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     color: #fff;
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: 15px;
     padding: 8px 0;
     flex-shrink: 0;
     overflow: hidden;
@@ -856,15 +856,15 @@ label {
 /* ── Race control tower ──────────────────────────────────────── */
 
 #race-control-tower {
-    font-size: 13px;
-    width: 175px;
+    font-size: 15px;
+    width: 200px;
     height: clamp(300px, 60vh, 600px);
     background: rgba(14, 14, 14, 0.82);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     color: #fff;
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: 15px;
     padding: 8px 0;
     flex-shrink: 0;
     overflow: hidden;
@@ -884,14 +884,14 @@ label {
 /* ── Session comparison panel ────────────────────────────────── */
 
 #comparison-panel {
-    font-size: 13px;
-    width: 340px;
+    font-size: 15px;
+    width: 370px;
     height: clamp(300px, 60vh, 600px);
     background: rgba(14, 14, 14, 0.82);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: 15px;
     padding: 8px 0;
     flex-shrink: 0;
     overflow: hidden;
@@ -910,7 +910,7 @@ label {
 
 .comp-empty {
     color: #444;
-    font-size: 11px;
+    font-size: 13px;
     letter-spacing: 0.06em;
     padding: 16px 0;
     text-align: center;
@@ -922,7 +922,7 @@ label {
 }
 
 #comparison-rows table th {
-    font-size: 9px;
+    font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.08em;
     border-bottom: 1px solid #2a2a2a;
@@ -931,7 +931,7 @@ label {
 }
 
 #comparison-rows table td {
-    font-size: 10px;
+    font-size: 12px;
     color: #888;
 }
 
@@ -952,7 +952,7 @@ label {
 
 #lap-counter,
 .lap-counter {
-    font-size: 10px;
+    font-size: 12px;
     color: #f0c040;
     font-family: var(--mono);
     letter-spacing: 0.06em;
@@ -1007,14 +1007,14 @@ label {
 }
 
 .focus-name {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.06em;
     color: #fff;
 }
 
 .focus-label {
-    font-size: 9px;
+    font-size: 13px;
     color: #555;
     letter-spacing: 0.1em;
 }
@@ -1023,7 +1023,7 @@ label {
     background: none;
     border: none;
     color: #555;
-    font-size: 11px;
+    font-size: 13px;
     cursor: pointer;
     padding: 0 2px;
     line-height: 1;
@@ -1058,7 +1058,7 @@ label {
     left: 50%;
     transform: translateX(-50%);
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: 12px;
     color: rgba(255,255,255,0.4);
     letter-spacing: 0.1em;
     white-space: nowrap;
@@ -1075,7 +1075,7 @@ label {
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: #fff;
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.08em;
     padding: 8px 16px;
@@ -1128,7 +1128,7 @@ label {
 
 .podium-title {
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.3em;
     color: var(--text-muted);
@@ -1157,7 +1157,7 @@ label {
 }
 
 .podium-position {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.12em;
     color: var(--text-muted);
@@ -1182,7 +1182,7 @@ label {
 }
 
 .podium-acronym {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 700;
     letter-spacing: 0.08em;
 }
@@ -1204,27 +1204,27 @@ label {
 }
 
 .podium-fastest-label {
-    font-size: 9px;
+    font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.14em;
     color: #cc44ff;
 }
 
 .podium-fastest-driver {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 700;
     letter-spacing: 0.06em;
 }
 
 .podium-fastest-time {
-    font-size: 11px;
+    font-size: 13px;
     color: var(--text-muted);
     margin-left: 4px;
 }
 
 .podium-close {
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.08em;
     background: none;
     border: 1px solid #333;
@@ -1378,7 +1378,7 @@ label {
     background: none;
     border: none;
     color: #444;
-    font-size: 11px;
+    font-size: 13px;
     cursor: pointer;
     padding: 0 2px;
     line-height: 1;
@@ -1446,6 +1446,6 @@ label {
 #overtake-tower,
 #race-control-tower,
 #comparison-panel {
-    font-size: 13px;
+    font-size: 15px;
     position: relative;
 }

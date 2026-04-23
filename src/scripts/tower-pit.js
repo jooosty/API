@@ -139,15 +139,15 @@ export function updatePitTower(currentSimTime, pitRows, allPitData, stintsByDriv
         dot.style.cssText = `display:inline-block;width:7px;height:7px;border-radius:50%;background:${info.colour};flex-shrink:0;`;
 
         const acronym = document.createElement('span');
-        acronym.style.cssText = 'font-weight:bold;font-size:11px;min-width:30px;letter-spacing:0.04em;';
+        acronym.style.cssText = 'font-weight:bold;font-size:13px;min-width:30px;letter-spacing:0.04em;';
         acronym.textContent = info.acronym;
 
         const lapEl = document.createElement('span');
-        lapEl.style.cssText = 'font-size:10px;color:#555;';
+        lapEl.style.cssText = 'font-size:12px;color:#555;';
         lapEl.textContent = pit.lap_number != null ? 'L' + pit.lap_number : '';
 
         const durEl = document.createElement('span');
-        durEl.style.cssText = 'margin-left:auto;font-size:11px;color:#ff9f1a;font-family:var(--mono,monospace);';
+        durEl.style.cssText = 'margin-left:auto;font-size:13px;color:#ff9f1a;font-family:var(--mono,monospace);';
         durEl.textContent = dur != null ? dur.toFixed(1) + 's' : '—';
 
         topLine.appendChild(dot);
@@ -163,18 +163,18 @@ export function updatePitTower(currentSimTime, pitRows, allPitData, stintsByDriv
         dotOut.style.cssText = `display:inline-block;width:9px;height:9px;border-radius:50%;background:${styleOut.bg};flex-shrink:0;border:1px solid rgba(255,255,255,0.15);`;
 
         const lblOut = document.createElement('span');
-        lblOut.style.cssText = `font-size:9px;color:${styleOut.bg};letter-spacing:0.04em;`;
+        lblOut.style.cssText = `font-size:11px;color:${styleOut.bg};letter-spacing:0.04em;`;
         lblOut.textContent = compoundShort(compoundOut);
 
         const arrow = document.createElement('span');
-        arrow.style.cssText = 'font-size:9px;color:#444;margin:0 2px;';
+        arrow.style.cssText = 'font-size:11px;color:#444;margin:0 2px;';
         arrow.textContent = '→';
 
         const dotIn = document.createElement('span');
         dotIn.style.cssText = `display:inline-block;width:9px;height:9px;border-radius:50%;background:${styleIn.bg};flex-shrink:0;border:1px solid rgba(255,255,255,0.15);`;
 
         const lblIn = document.createElement('span');
-        lblIn.style.cssText = `font-size:9px;color:${styleIn.bg};letter-spacing:0.04em;`;
+        lblIn.style.cssText = `font-size:11px;color:${styleIn.bg};letter-spacing:0.04em;`;
         lblIn.textContent = compoundShort(compoundIn);
 
         bottomLine.appendChild(dotOut);

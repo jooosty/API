@@ -53,14 +53,14 @@ export function updateOvertakeTower(currentSimTime, container, allOvertakeData, 
         topLine.style.cssText = 'display:flex;align-items:center;gap:5px;margin-bottom:3px;';
 
         const posBadge = document.createElement('span');
-        posBadge.style.cssText = 'font-size:9px;font-weight:700;letter-spacing:0.1em;padding:1px 5px;border-radius:3px;background:#1a1a00;color:#f0c040;border:1px solid #3a3a00;flex-shrink:0;';
+        posBadge.style.cssText = 'font-size:11px;font-weight:700;letter-spacing:0.1em;padding:1px 5px;border-radius:3px;background:#1a1a00;color:#f0c040;border:1px solid #3a3a00;flex-shrink:0;';
         posBadge.textContent = 'P' + o.position;
 
         topLine.appendChild(posBadge);
 
         if (lapNum !== null) {
             const lapEl = document.createElement('span');
-            lapEl.style.cssText = 'font-size:9px;color:#555;letter-spacing:0.06em;';
+            lapEl.style.cssText = 'font-size:11px;color:#555;letter-spacing:0.06em;';
             lapEl.textContent = 'L' + lapNum;
             topLine.appendChild(lapEl);
         }
@@ -75,12 +75,12 @@ export function updateOvertakeTower(currentSimTime, container, allOvertakeData, 
         dotPasser.style.cssText = `display:inline-block;width:7px;height:7px;border-radius:50%;background:${passer.colour};flex-shrink:0;`;
 
         const namePasser = document.createElement('span');
-        namePasser.style.cssText = 'font-weight:700;font-size:11px;letter-spacing:0.03em;color:#fff;';
+        namePasser.style.cssText = 'font-weight:700;font-size:13px;letter-spacing:0.03em;color:#fff;';
         namePasser.textContent = passer.acronym;
 
         // Arrow
         const arrow = document.createElement('span');
-        arrow.style.cssText = 'font-size:10px;color:#3ecf5a;flex-shrink:0;';
+        arrow.style.cssText = 'font-size:12px;color:#3ecf5a;flex-shrink:0;';
         arrow.textContent = '↑';
 
         // Overtaken driver
@@ -88,7 +88,7 @@ export function updateOvertakeTower(currentSimTime, container, allOvertakeData, 
         dotPassed.style.cssText = `display:inline-block;width:7px;height:7px;border-radius:50%;background:${passed.colour};flex-shrink:0;`;
 
         const namePassed = document.createElement('span');
-        namePassed.style.cssText = 'font-size:11px;letter-spacing:0.03em;color:#666;';
+        namePassed.style.cssText = 'font-size:13px;letter-spacing:0.03em;color:#666;';
         namePassed.textContent = passed.acronym;
 
         driverLine.appendChild(dotPasser);

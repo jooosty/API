@@ -93,11 +93,11 @@ export function buildSectorStrip(lap, bestSectors) {
         col.style.cssText = 'flex:1;display:flex;flex-direction:column;gap:1px;';
 
         const labelEl = document.createElement('span');
-        labelEl.style.cssText = 'font-size:9px;color:#444;letter-spacing:0.06em;';
+        labelEl.style.cssText = 'font-size:11px;color:#444;letter-spacing:0.06em;';
         labelEl.textContent = label;
 
         const valEl = document.createElement('span');
-        valEl.style.cssText = `font-size:10px;font-family:var(--mono, monospace);color:${sectorColor(dur, segs, best)};`;
+        valEl.style.cssText = `font-size:12px;font-family:var(--mono, monospace);color:${sectorColor(dur, segs, best)};`;
         valEl.textContent = fmtSec(dur);
 
         col.appendChild(labelEl);

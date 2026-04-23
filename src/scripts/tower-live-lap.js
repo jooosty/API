@@ -239,15 +239,15 @@ export function updateLiveLapTower(currentSimTime, liveRows, allLapData, allStin
         dot.style.cssText = `display:inline-block;width:7px;height:7px;border-radius:50%;background:${info.colour};flex-shrink:0;`;
 
         const acronymEl = document.createElement('span');
-        acronymEl.style.cssText = 'font-weight:bold;font-size:12px;min-width:34px;letter-spacing:0.04em;color:#fff;';
+        acronymEl.style.cssText = 'font-weight:bold;font-size:14px;min-width:34px;letter-spacing:0.04em;color:#fff;';
         acronymEl.textContent = info.acronym;
 
         const elapsedEl = document.createElement('span');
-        elapsedEl.style.cssText = 'font-size:11px;color:#f0c040;font-family:var(--mono,monospace);margin-left:auto;';
+        elapsedEl.style.cssText = 'font-size:13px;color:#f0c040;font-family:var(--mono,monospace);margin-left:auto;';
         elapsedEl.textContent = fmtSec(elapsed);
 
         const deltaEl = document.createElement('span');
-        deltaEl.style.cssText = `font-size:10px;color:${deltaColor};font-family:var(--mono,monospace);min-width:52px;text-align:right;`;
+        deltaEl.style.cssText = `font-size:12px;color:${deltaColor};font-family:var(--mono,monospace);min-width:52px;text-align:right;`;
         deltaEl.textContent = deltaStr;
 
         header.appendChild(dot);
@@ -271,11 +271,11 @@ export function updateLiveLapTower(currentSimTime, liveRows, allLapData, allStin
             col.style.cssText = 'flex:1;display:flex;flex-direction:column;gap:1px;';
 
             const lbl = document.createElement('span');
-            lbl.style.cssText = 'font-size:9px;color:#444;letter-spacing:0.06em;';
+            lbl.style.cssText = 'font-size:11px;color:#444;letter-spacing:0.06em;';
             lbl.textContent = label;
 
             const val = document.createElement('span');
-            val.style.cssText = 'font-size:10px;font-family:var(--mono,monospace);';
+            val.style.cssText = 'font-size:12px;font-family:var(--mono,monospace);';
 
             if (live) {
                 val.style.color = '#666';
