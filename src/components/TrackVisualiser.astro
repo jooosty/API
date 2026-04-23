@@ -26,6 +26,7 @@
                 <source id="loading-video-src" src="" type="video/mp4">
             </video>
             <div id="loading-status" class="loading-status"></div>
+            <button id="skip-intro" class="skip-intro tower-hidden">Skip Intro ›</button>
         </div>
         <div id="interval-tower" class="tower-hidden">
             <div class="tower-header tower-header--split">
@@ -192,20 +193,29 @@
         const allDriverLocationData = await fetchLocationData(apiFetch, sessionKey, sessionData, driversData, setLoadingText);
 
 
-        // Wait for video to finish before revealing the session
+        // Data is ready — stop looping and show skip button
+        const skipBtn = document.getElementById('skip-intro');
         if (loadingVideo && !loadingVideo.ended) {
             loadingVideo.loop = false;
-            // If video hasn't started (autoplay blocked) just skip wait
+            if (skipBtn) skipBtn.classList.remove('tower-hidden');
+
             await new Promise(resolve => {
-                if (loadingVideo.ended || loadingVideo.paused && loadingVideo.currentTime === 0) {
+                if (loadingVideo.ended || (loadingVideo.paused && loadingVideo.currentTime === 0)) {
                     resolve();
                 } else {
-                    loadingVideo.addEventListener('ended', resolve, { once: true });
-                    // Safety timeout — never block longer than video duration or 30s
+                    const onEnd  = () => { cleanup(); resolve(); };
+                    const onSkip = () => { cleanup(); resolve(); };
+                    function cleanup() {
+                        loadingVideo.removeEventListener('ended', onEnd);
+                        if (skipBtn) skipBtn.removeEventListener('click', onSkip);
+                    }
+                    loadingVideo.addEventListener('ended', onEnd, { once: true });
+                    if (skipBtn) skipBtn.addEventListener('click', onSkip, { once: true });
                     setTimeout(resolve, Math.max((loadingVideo.duration || 30) * 1000, 30000));
                 }
             });
         }
+        if (skipBtn) skipBtn.classList.add('tower-hidden');
         if (loadingOverlay) loadingOverlay.classList.add('tower-hidden');
 
         // ── Build scene ───────────────────────────────────────

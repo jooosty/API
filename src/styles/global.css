@@ -1048,3 +1048,35 @@ label {
     white-space: nowrap;
     pointer-events: none;
 }
+
+/* ── Skip intro button ───────────────────────────────────────── */
+
+.skip-intro {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(14, 14, 14, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    transition: background 0.15s, border-color 0.15s;
+    animation: skip-fade-in 0.4s ease;
+}
+
+.skip-intro:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+@keyframes skip-fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
