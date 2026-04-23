@@ -21,6 +21,7 @@
 <div class="visualiser-layout">
     <div class="track-wrap">
         <div id="track-container"></div>
+        <button id="pip-button" class="pip-button" title="Picture in Picture">⧉</button>
         <div id="podium-overlay" class="podium-overlay tower-hidden"></div>
         <div id="loading-overlay" class="loading-overlay tower-hidden">
             <video id="loading-video" class="loading-video" playsinline>
@@ -123,6 +124,38 @@
     const camera   = createCamera();
     const renderer = createRenderer();
     document.getElementById('track-container')?.appendChild(renderer.domElement);
+
+    // ── Picture in Picture ────────────────────────────────────
+    document.getElementById('pip-button')?.addEventListener('click', async () => {
+        const canvas = renderer.domElement;
+        // Canvas PiP requires capturing a video stream from the canvas
+        if (document.pictureInPictureElement) {
+            await document.exitPictureInPicture();
+            return;
+        }
+        try {
+            // Create a hidden video fed by the canvas stream
+            let pipVideo = document.getElementById('pip-video-el');
+            if (!pipVideo) {
+                pipVideo = document.createElement('video');
+                pipVideo.id  = 'pip-video-el';
+                pipVideo.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;';
+                pipVideo.muted = true;
+                document.body.appendChild(pipVideo);
+            }
+            // Capture at ~30fps
+            const stream = canvas.captureStream(30);
+            pipVideo.srcObject = stream;
+            await pipVideo.play();
+            await pipVideo.requestPictureInPicture();
+
+            pipVideo.addEventListener('leavepictureinpicture', () => {
+                pipVideo.pause();
+            }, { once: true });
+        } catch (err) {
+            console.warn('PiP not supported or denied:', err);
+        }
+    });
 
     function setLoadControls(isLoading) {
         const loadButton       = document.getElementById('load-track-button');

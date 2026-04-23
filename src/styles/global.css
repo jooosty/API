@@ -1182,6 +1182,11 @@ label {
     font-family: var(--mono);
 }
 
+.podium-fastest-icon {
+    font-size: 14px;
+    color: #cc44ff;
+}
+
 .podium-fastest-label {
     font-size: 9px;
     font-weight: 700;
@@ -1217,4 +1222,35 @@ label {
     border-color: #666;
     color: #fff;
     background: none;
+}
+
+/* ── Picture in Picture button ───────────────────────────────── */
+
+.pip-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 18;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    background: rgba(14, 14, 14, 0.75);
+    border: 1px solid #333;
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    line-height: 1;
+}
+
+.pip-button:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: #666;
+    color: #fff;
 }
