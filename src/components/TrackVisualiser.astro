@@ -21,6 +21,7 @@
 <div class="visualiser-layout">
     <div class="track-wrap">
         <div id="track-container"></div>
+        <div id="podium-overlay" class="podium-overlay tower-hidden"></div>
         <div id="loading-overlay" class="loading-overlay tower-hidden">
             <video id="loading-video" class="loading-video" playsinline>
                 <source id="loading-video-src" src="" type="video/mp4">
@@ -116,6 +117,7 @@
     import { setupTelemetry } from '../scripts/track-telemetry.js';
     import { setupPlayback } from '../scripts/track-playback.js';
     import { setupComparison } from '../scripts/session-comparison.js';
+    import { showPodium, hidePodium } from '../scripts/podium-screen.js';
 
     const scene    = createScene();
     const camera   = createCamera();
@@ -288,6 +290,8 @@
             driverInfoMap, isPractice, isQualifying,
             radio, telemetry,
             comparison,
+            allSessionResultData: towerData.allSessionResultData || [],
+            showPodium, hidePodium,
             apiFetch, sessionKey,
         });
     }

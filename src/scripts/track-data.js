@@ -56,6 +56,7 @@ export async function fetchSessionData(apiFetch, sessionKey, setLoadingText) {
 export async function fetchTowerData(apiFetch, sessionKey, isPractice, isQualifying, setLoadingText) {
     let allIntervalData = [], allPositionData = [], allLapData = [];
     let allStintData = [], allPitData = [], allOvertakeData = [], allRaceControlData = [];
+    let allSessionResultData = [];
     let qualPhaseBoundaries = [];
     const dnfDrivers = new Set();
 
@@ -109,6 +110,7 @@ export async function fetchTowerData(apiFetch, sessionKey, isPractice, isQualify
         setLoadingText('Fetching results...');
         const sessionResultData = (await apiFetch(`${BASE_URL}/session_result?session_key=${sessionKey}`)) || [];
         sessionResultData.filter(r => r.dnf || r.dns || r.dsq).forEach(r => dnfDrivers.add(r.driver_number));
+        allSessionResultData = sessionResultData;
 
         setLoadingText('Fetching lap times...');
         allLapData = (await apiFetch(`${BASE_URL}/laps?session_key=${sessionKey}`)) || [];
@@ -140,7 +142,7 @@ export async function fetchTowerData(apiFetch, sessionKey, isPractice, isQualify
     return {
         allIntervalData, allPositionData, allLapData, allStintData,
         allPitData, allOvertakeData, allRaceControlData, allWeatherData, allRadioData,
-        qualPhaseBoundaries, dnfDrivers,
+        qualPhaseBoundaries, dnfDrivers, allSessionResultData,
     };
 }
 

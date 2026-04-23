@@ -44,7 +44,7 @@ function updateWeather(t, allWeatherData) {
     }
 }
 
-export function setupPlayback({ scene, camera, renderer, driverDots, allDriverLocationData, setupDriverTrails, cameraCtrl = null, allLapData, allStintData, allIntervalData, allPositionData, allPitData, allOvertakeData, allRaceControlData = [], allWeatherData, allRadioData, driverInfoMap, dnfDrivers, isPractice, isQualifying, qualPhaseBoundaries, radio, telemetry, comparison = null }) {
+export function setupPlayback({ scene, camera, renderer, driverDots, allDriverLocationData, setupDriverTrails, cameraCtrl = null, allLapData, allStintData, allIntervalData, allPositionData, allPitData, allOvertakeData, allRaceControlData = [], allWeatherData, allRadioData, driverInfoMap, dnfDrivers, isPractice, isQualifying, qualPhaseBoundaries, radio, telemetry, comparison = null, allSessionResultData = [], showPodium = null, hidePodium = null }) {
     const stintsByDriver = buildPitTowerState(allStintData);
 
     // ── Driver trails ─────────────────────────────────────────
@@ -151,6 +151,7 @@ export function setupPlayback({ scene, camera, renderer, driverDots, allDriverLo
         isScrubbing = true; isPlaying = false; lastRealTime = null;
         document.getElementById('play-pause-button').textContent = 'Play';
         radio.dismiss();
+        if (hidePodium) hidePodium();
     });
     timelineScrubber.addEventListener('input', () => {
         simulatedTime = earliestTime + (Number(timelineScrubber.value) / 1000) * totalDuration;
@@ -187,6 +188,9 @@ export function setupPlayback({ scene, camera, renderer, driverDots, allDriverLo
         if (reachedEnd) {
             isPlaying = false; lastRealTime = null;
             document.getElementById('play-pause-button').textContent = 'Play';
+            if (!isPractice && !isQualifying && showPodium && allSessionResultData.length > 0) {
+                showPodium(allSessionResultData, allLapData, driverInfoMap);
+            }
         }
 
         const elapsed = simulatedTime - earliestTime;
