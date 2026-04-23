@@ -26,7 +26,7 @@ body {
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    padding: 24px;
+    padding: clamp(8px, 2vw, 24px);
     line-height: 1.5;
 }
 
@@ -156,18 +156,24 @@ label {
     display: flex;
     gap: 12px;
     align-items: flex-start;
+    flex-wrap: wrap;
+    overflow-x: auto;
 }
 
 /* ── Track canvas ────────────────────────────────────────────── */
 
 .track-wrap {
     position: relative;
-    flex-shrink: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 800px;
 }
 
 #track-container {
-    width: 800px;
-    height: 600px;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    max-width: 800px;
+    height: auto;
     background: #1a1a1a;
     border-radius: var(--radius);
     overflow: hidden;
@@ -175,7 +181,8 @@ label {
 }
 
 .timeline-row {
-    width: 800px;
+    width: 100%;
+    max-width: 800px;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -202,7 +209,7 @@ label {
     position: absolute;
     top: 12px;
     right: 12px;
-    width: 210px;
+    width: min(210px, 90%);
     background: rgba(14, 14, 14, 0.92);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
@@ -373,7 +380,8 @@ label {
     top: 0;
     left: 0;
     width: 195px;
-    height: 600px;
+    bottom: 40px; /* stops above the timeline row */
+    height: auto;
     background: rgba(14, 14, 14, 0.82);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
@@ -425,7 +433,7 @@ label {
 #interval-rows {
     padding: 0 4px;
     overflow-y: auto;
-    max-height: calc(600px - 48px);
+    max-height: calc(clamp(300px, 60vh, 600px) - 48px);
     scrollbar-width: none;
 }
 
@@ -619,7 +627,9 @@ label {
     border-radius: var(--radius);
     overflow: hidden;
     transition: border-color 0.15s;
-    flex: 0 0 300px;
+    flex: 0 0 300px; /* overridden by JS dynamically */
+    min-width: 220px;
+    max-width: 300px;
 }
 
 .race-card:hover {
@@ -789,7 +799,7 @@ label {
 
 #pit-tower {
     width: 180px;
-    height: 600px;
+    height: clamp(300px, 60vh, 600px);
     background: rgba(14, 14, 14, 0.82);
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -804,7 +814,7 @@ label {
 #pit-tower-rows {
     padding: 0 4px;
     overflow-y: auto;
-    max-height: calc(600px - 32px);
+    max-height: calc(clamp(300px, 60vh, 600px) - 32px);
     scrollbar-width: none;
 }
 
@@ -816,7 +826,7 @@ label {
 
 #overtake-tower {
     width: 150px;
-    height: 600px;
+    height: clamp(300px, 60vh, 600px);
     background: rgba(14, 14, 14, 0.82);
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -831,7 +841,7 @@ label {
 #overtake-rows {
     padding: 0 4px;
     overflow-y: auto;
-    max-height: calc(600px - 32px);
+    max-height: calc(clamp(300px, 60vh, 600px) - 32px);
     scrollbar-width: none;
 }
 
@@ -843,7 +853,7 @@ label {
 
 #race-control-tower {
     width: 175px;
-    height: 600px;
+    height: clamp(300px, 60vh, 600px);
     background: rgba(14, 14, 14, 0.82);
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -858,7 +868,7 @@ label {
 #race-control-rows {
     padding: 0 4px;
     overflow-y: auto;
-    max-height: calc(600px - 32px);
+    max-height: calc(clamp(300px, 60vh, 600px) - 32px);
     scrollbar-width: none;
 }
 
@@ -870,7 +880,7 @@ label {
 
 #comparison-panel {
     width: 340px;
-    height: 600px;
+    height: clamp(300px, 60vh, 600px);
     background: rgba(14, 14, 14, 0.82);
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -884,7 +894,7 @@ label {
 #comparison-rows {
     padding: 0 10px;
     overflow-y: auto;
-    max-height: calc(600px - 32px);
+    max-height: calc(clamp(300px, 60vh, 600px) - 32px);
     scrollbar-width: none;
 }
 
@@ -1126,7 +1136,7 @@ label {
 }
 
 .podium-card {
-    width: 110px;
+    width: clamp(80px, 12vw, 110px);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1264,4 +1274,93 @@ label {
 
 .carousel-track-outer:active {
     cursor: grabbing;
+}
+
+/* ── Responsive breakpoints ──────────────────────────────────── */
+
+@media (max-width: 900px) {
+    .visualiser-layout {
+        flex-direction: column;
+    }
+
+    #interval-tower {
+        position: relative;
+        bottom: auto;
+        width: 100%;
+        height: auto;
+        max-height: 220px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        border-radius: var(--radius) var(--radius) 0 0;
+    }
+
+    #interval-rows {
+        max-height: 170px;
+    }
+
+    #live-lap-tower,
+    #pit-tower,
+    #overtake-tower,
+    #race-control-tower,
+    #comparison-panel {
+        width: 100%;
+        height: auto;
+        max-height: 220px;
+    }
+
+    #live-lap-rows,
+    #pit-tower-rows,
+    #overtake-rows,
+    #race-control-rows,
+    #comparison-rows {
+        max-height: 170px;
+    }
+
+    .track-wrap {
+        max-width: 100%;
+    }
+
+    .podium-stage {
+        gap: 4px;
+    }
+
+    .podium-card {
+        width: clamp(70px, 25vw, 110px);
+    }
+
+    .podium-headshot,
+    .podium-headshot--placeholder {
+        width: 48px;
+        height: 48px;
+    }
+}
+
+@media (max-width: 600px) {
+    .visualiser-controls {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .carousel-wrapper {
+        padding: 0;
+    }
+
+    .calendar-hero-intro h1 {
+        font-size: 22px;
+    }
+
+    #live-lap-tower,
+    #overtake-tower,
+    #race-control-tower {
+        display: none !important;
+    }
+
+    .podium-screen {
+        padding: 16px;
+        gap: 16px;
+    }
+
+    .pip-button {
+        display: none; /* PiP not reliable on mobile */
+    }
 }

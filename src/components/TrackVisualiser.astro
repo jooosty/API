@@ -110,7 +110,7 @@
 
 <script>
     import * as THREE from 'three';
-    import { createScene, createCamera, createRenderer, buildCoordTransform, buildTrackGeometry, buildDriverDots, setupDotClickDetection } from '../scripts/track-scene.js';
+    import { createScene, createCamera, createRenderer, resizeRenderer, buildCoordTransform, buildTrackGeometry, buildDriverDots, setupDotClickDetection } from '../scripts/track-scene.js';
     import { setupDriverTrails } from '../scripts/track-overlays.js';
     import { setupCameraControls } from '../scripts/track-camera.js';
     import { createApiFetcher, fetchSessionData, fetchTowerData, buildDriverInfoMap, fetchLocationData } from '../scripts/track-data.js';
@@ -123,7 +123,17 @@
     const scene    = createScene();
     const camera   = createCamera();
     const renderer = createRenderer();
-    document.getElementById('track-container')?.appendChild(renderer.domElement);
+    const trackContainer = document.getElementById('track-container');
+    trackContainer?.appendChild(renderer.domElement);
+
+    // Resize renderer when container size changes
+    const resizeObs = new ResizeObserver(() => {
+        if (trackContainer) resizeRenderer(renderer, camera, trackContainer);
+    });
+    if (trackContainer) {
+        resizeObs.observe(trackContainer);
+        resizeRenderer(renderer, camera, trackContainer);
+    }
 
     // ── Picture in Picture ────────────────────────────────────
     document.getElementById('pip-button')?.addEventListener('click', async () => {

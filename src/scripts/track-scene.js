@@ -20,9 +20,24 @@ export function createCamera() {
 
 export function createRenderer() {
     const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(800, 600);
     renderer.setPixelRatio(window.devicePixelRatio);
     return renderer;
+}
+
+export function resizeRenderer(renderer, camera, container) {
+    const w = container.clientWidth  || 800;
+    const h = container.clientHeight || 600;
+    renderer.setSize(w, h);
+    if (camera.isOrthographicCamera) {
+        const aspect = w / h;
+        const vw = 400 * (w / 800); // scale frustum with width
+        const vh = vw / aspect;
+        camera.left   = -vw;
+        camera.right  =  vw;
+        camera.top    =  vh;
+        camera.bottom = -vh;
+        camera.updateProjectionMatrix();
+    }
 }
 
 export function createLoadingSprite(scene, camera, renderer) {
