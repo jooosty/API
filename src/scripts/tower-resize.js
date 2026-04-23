@@ -22,11 +22,11 @@ const BASE_FONT = 13;  // px — matches the font-size set in CSS
 
 // Default widths match CSS definitions
 const DEFAULT_WIDTHS = {
-    'live-lap-tower':     215,
-    'pit-tower':          205,
-    'overtake-tower':     175,
-    'race-control-tower': 200,
-    'comparison-panel':   370,
+    'live-lap-tower':     190,
+    'pit-tower':          180,
+    'overtake-tower':     150,
+    'race-control-tower': 175,
+    'comparison-panel':   340,
 };
 
 export function setupTowerResize() {
@@ -40,8 +40,8 @@ export function setupTowerResize() {
         // ── Close / expand button ─────────────────────────────
         const closeBtn = document.createElement('button');
         closeBtn.className   = 'tower-close-btn';
-        closeBtn.textContent = '✕';
-        closeBtn.title       = 'Close tower';
+        closeBtn.textContent = '−';
+        closeBtn.title = 'Collapse tower';
         header.appendChild(closeBtn);
 
         let collapsed = false;
@@ -50,8 +50,8 @@ export function setupTowerResize() {
             e.stopPropagation();
             collapsed = !collapsed;
             tower.classList.toggle('tower-collapsed', collapsed);
-            closeBtn.textContent = collapsed ? '＋' : '✕';
-            closeBtn.title       = collapsed ? 'Expand tower' : 'Close tower';
+            closeBtn.textContent = collapsed ? '＋' : '−';
+            closeBtn.title = collapsed ? 'Expand tower' : 'Collapse tower';
         });
 
         // Click header to re-expand when collapsed
@@ -59,7 +59,7 @@ export function setupTowerResize() {
             if (collapsed) {
                 collapsed = false;
                 tower.classList.remove('tower-collapsed');
-                closeBtn.textContent = '✕';
+                closeBtn.textContent = '−';
                 closeBtn.title = 'Close tower';
             }
         });
