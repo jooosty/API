@@ -25,8 +25,7 @@ const TRIGGERS = [
         word:   'max',
         action: () => playLoud('/sounds/tu-tu-tu-du-max-verstappen.mp3', 3.0),
     },
-    // Add more easter eggs here, e.g:
-    // { word: 'senna', action: () => playLoud('/sounds/senna.mp3') },
+    // Add more easter eggs here, e.g:\
 ];
 
 const MAX_LEN = Math.max(...TRIGGERS.map(t => t.word.length));
