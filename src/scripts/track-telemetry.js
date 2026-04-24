@@ -38,12 +38,47 @@ function drawHUD(hudCanvas, hudCtx, entry, info) {
     hudCtx.fillRect(0, 0, W, 4);
 
     if (!entry) {
-        hudCtx.fillStyle = '#444';
-        hudCtx.font = 'bold 11px monospace';
+        // Fake progress bar — eases from 0% to ~92% over ~3s, never reaches 100 until data arrives
+        if (!drawHUD._loadStart) drawHUD._loadStart = Date.now();
+        const elapsed = (Date.now() - drawHUD._loadStart) / 1000; // seconds
+        // Ease-out curve: fast at start, slows as it approaches 92%
+        const fakeProgress = 0.92 * (1 - Math.exp(-elapsed * 0.9));
+
+        const aS  = Math.PI * 0.75;
+        const aE  = Math.PI * 2.25;
+        const cx  = W / 2, cy = H / 2 + 10, R = 58;
+
+        // Background track
+        hudCtx.beginPath();
+        hudCtx.arc(cx, cy, R, aS, aE);
+        hudCtx.strokeStyle = 'rgba(255,255,255,0.07)';
+        hudCtx.lineWidth = 8;
+        hudCtx.lineCap = 'round';
+        hudCtx.stroke();
+
+        // Progress fill
+        const fillEnd = aS + (aE - aS) * fakeProgress;
+        hudCtx.beginPath();
+        hudCtx.arc(cx, cy, R, aS, fillEnd);
+        hudCtx.strokeStyle = info.colour || '#00aaff';
+        hudCtx.lineWidth = 8;
+        hudCtx.lineCap = 'round';
+        hudCtx.stroke();
+
+        // Percentage text
+        hudCtx.fillStyle = '#fff';
+        hudCtx.font = 'bold 20px monospace';
         hudCtx.textAlign = 'center';
-        hudCtx.fillText('Loading…', W/2, H/2 + 4);
+        hudCtx.fillText(Math.round(fakeProgress * 100) + '%', cx, cy - 4);
+
+        hudCtx.fillStyle = 'rgba(255,255,255,0.3)';
+        hudCtx.font = '9px monospace';
+        hudCtx.fillText('LOADING', cx, cy + 12);
         return;
     }
+
+    // Reset load timer once data arrives
+    drawHUD._loadStart = null;
 
     const speed    = entry.speed    ?? 0;
     const rpm      = entry.rpm      ?? 0;
@@ -143,11 +178,31 @@ export function setupTelemetry(driverInfoMap, apiFetch, sessionKey, renderer, ca
         }
     }
 
+    let _loadingAnimId = null;
+
+    function _animateLoading() {
+        if (selectedDriverNum === null || hudCanvas.style.display === 'none') {
+            _loadingAnimId = null;
+            return;
+        }
+        const info  = driverInfoMap[selectedDriverNum] || { acronym: '#' + selectedDriverNum, colour: '#fff' };
+        const entry = getAtTime(selectedDriverNum, _simulatedTime);
+        drawHUD(hudCanvas, hudCtx, entry, info);
+        // Keep spinning until real data arrives
+        if (!entry) _loadingAnimId = requestAnimationFrame(_animateLoading);
+        else _loadingAnimId = null;
+    }
+
     function update(t) {
         _simulatedTime = t;
         if (selectedDriverNum === null || hudCanvas.style.display === 'none') return;
-        const info = driverInfoMap[selectedDriverNum] || { acronym: '#' + selectedDriverNum, colour: '#fff' };
-        drawHUD(hudCanvas, hudCtx, getAtTime(selectedDriverNum, t), info);
+        const info  = driverInfoMap[selectedDriverNum] || { acronym: '#' + selectedDriverNum, colour: '#fff' };
+        const entry = getAtTime(selectedDriverNum, t);
+        drawHUD(hudCanvas, hudCtx, entry, info);
+        // If no data yet and not already animating, start the spinner loop
+        if (!entry && !_loadingAnimId) {
+            _loadingAnimId = requestAnimationFrame(_animateLoading);
+        }
     }
 
     return { select, update, getSelectedDriver: () => selectedDriverNum };
