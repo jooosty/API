@@ -103,16 +103,16 @@ export function setupComparison(allLapData, allStintData, driverInfoMap) {
         }
     }
 
-    // ── Lap time bar chart ────────────────────────────────────
+    // ── Lap time bar chart (HTML/CSS) ─────────────────────────
     function buildLapChart(laps, allStintData, driverNum, info) {
         const wrap = document.createElement('div');
-        wrap.style.cssText = 'flex:1;min-width:280px;';
+        wrap.style.cssText = 'flex:1;min-width:240px;';
 
         // Header
         const header = document.createElement('div');
         header.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:8px;';
         const dot = document.createElement('span');
-        dot.style.cssText = `display:inline-block;width:8px;height:8px;border-radius:50%;background:${info.colour};`;
+        dot.style.cssText = `display:inline-block;width:8px;height:8px;border-radius:50%;background:${info.colour};flex-shrink:0;`;
         const title = document.createElement('span');
         title.style.cssText = 'font-size:13px;font-weight:700;letter-spacing:0.06em;color:#fff;';
         title.textContent = info.acronym + ' — Lap Times';
@@ -133,56 +133,50 @@ export function setupComparison(allLapData, allStintData, driverInfoMap) {
         const maxTime   = Math.max(...validLaps.map(l => l.lap_duration));
         const range     = maxTime - minTime || 1;
 
-        // Canvas bar chart
-        const BAR_H    = 12;
-        const GAP      = 3;
-        const LEFT_PAD = 28;
-        const RIGHT_PAD= 60;
-        const W        = 320;
-        const H        = validLaps.length * (BAR_H + GAP) + 20;
+        const list = document.createElement('div');
+        list.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
 
-        const canvas  = document.createElement('canvas');
-        canvas.width  = W;
-        canvas.height = H;
-        canvas.style.cssText = 'width:100%;max-width:320px;display:block;';
-        const ctx = canvas.getContext('2d');
-
-        ctx.fillStyle = '#0d0d0d';
-        ctx.fillRect(0, 0, W, H);
-
-        validLaps.forEach((lap, i) => {
-            const y        = i * (BAR_H + GAP) + 16;
-            const barW     = Math.max(2, ((lap.lap_duration - minTime) / range) * (W - LEFT_PAD - RIGHT_PAD));
+        validLaps.forEach(lap => {
             const compound = getCompoundForLap(allStintData, driverNum, lap.lap_number);
             const col      = compoundColor(compound);
             const isBest   = lap.lap_duration === minTime;
+            const pct      = Math.max(2, ((lap.lap_duration - minTime) / range) * 100);
+
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:6px;';
 
             // Lap number
-            ctx.fillStyle = '#555';
-            ctx.font      = '8px monospace';
-            ctx.textAlign = 'right';
-            ctx.fillText(lap.lap_number, LEFT_PAD - 4, y + BAR_H - 2);
+            const lapNum = document.createElement('span');
+            lapNum.style.cssText = 'font-size:11px;color:#555;font-family:var(--mono);min-width:22px;text-align:right;flex-shrink:0;';
+            lapNum.textContent = 'L' + lap.lap_number;
 
-            // Bar background
-            ctx.fillStyle = '#1a1a1a';
-            ctx.fillRect(LEFT_PAD, y, W - LEFT_PAD - RIGHT_PAD, BAR_H);
+            // Bar container
+            const barWrap = document.createElement('div');
+            barWrap.style.cssText = 'flex:1;background:#1a1a1a;border-radius:2px;overflow:hidden;height:14px;position:relative;';
 
-            // Bar fill — team colour for best, compound colour for others
-            ctx.fillStyle = isBest ? info.colour : col + '99';
-            ctx.fillRect(LEFT_PAD, y, barW, BAR_H);
+            // Compound strip
+            const strip = document.createElement('div');
+            strip.style.cssText = `position:absolute;left:0;top:0;width:3px;height:100%;background:${col};`;
 
-            // Compound strip on left of bar
-            ctx.fillStyle = col;
-            ctx.fillRect(LEFT_PAD, y, 3, BAR_H);
+            // Bar fill
+            const fill = document.createElement('div');
+            fill.style.cssText = `height:100%;width:${pct}%;background:${isBest ? info.colour : col + '99'};padding-left:3px;box-sizing:border-box;border-radius:0 2px 2px 0;transition:width 0.3s ease;`;
 
-            // Lap time label
-            ctx.fillStyle = isBest ? '#fff' : '#888';
-            ctx.font      = isBest ? 'bold 9px monospace' : '9px monospace';
-            ctx.textAlign = 'left';
-            ctx.fillText(fmtLap(lap.lap_duration), LEFT_PAD + barW + 5, y + BAR_H - 2);
+            barWrap.appendChild(strip);
+            barWrap.appendChild(fill);
+
+            // Lap time
+            const time = document.createElement('span');
+            time.style.cssText = `font-size:11px;font-family:var(--mono);color:${isBest ? '#fff' : '#888'};font-weight:${isBest ? '700' : '400'};min-width:58px;flex-shrink:0;`;
+            time.textContent = fmtLap(lap.lap_duration);
+
+            row.appendChild(lapNum);
+            row.appendChild(barWrap);
+            row.appendChild(time);
+            list.appendChild(row);
         });
 
-        wrap.appendChild(canvas);
+        wrap.appendChild(list);
         return wrap;
     }
 
