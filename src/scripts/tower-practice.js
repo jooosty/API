@@ -1,6 +1,7 @@
 import { buildTowerRow } from './tower-base.js';
+import { attachRowContextMenu } from './tower-context-menu.js';
 
-export function updatePracticeTower(currentSimTime, intervalRows, allLapData, driverInfoMap) {
+export function updatePracticeTower(currentSimTime, intervalRows, allLapData, driverInfoMap, onPrimaryClick = null, onSecondaryClick = null) {
     const bestLap = {};
     const lastLap = {};
     const lapCount = {};
@@ -65,6 +66,15 @@ export function updatePracticeTower(currentSimTime, intervalRows, allLapData, dr
         lapBadge.style.cssText = 'font-size:12px;color:#555;min-width:20px;text-align:center;';
         lapBadge.textContent = `L${laps}`;
         acronymEl.after(lapBadge);
+
+        rowEl.style.cursor = 'context-menu';
+        attachRowContextMenu(rowEl, dn, {
+            onTelemetry:    onPrimaryClick   || undefined,
+            onCompare:      onSecondaryClick || undefined,
+            driverAcronym:  info.acronym,
+            driverLastName: info.lastName || info.acronym,
+            driverColour:   info.colour,
+        });
 
         intervalRows.appendChild(rowEl);
     });

@@ -1,4 +1,5 @@
 import { buildTowerRow } from './tower-base.js';
+import { attachRowContextMenu } from './tower-context-menu.js';
 
 const COMPOUND_COLOR = {
     SOFT:         '#c0392b',
@@ -110,10 +111,14 @@ export function updateRaceTower(currentSimTime, intervalRows, allIntervalData, a
             rowEl.style.borderLeft = `2px solid ${info.colour}`;
         }
 
-        rowEl.style.cursor = 'pointer';
-        rowEl.title = 'Left click: telemetry  |  Right click: compare';
-        rowEl.addEventListener('click', () => { if (onPrimaryClick) onPrimaryClick(dn); });
-        rowEl.addEventListener('contextmenu', e => { e.preventDefault(); if (onSecondaryClick) onSecondaryClick(dn); });
+        rowEl.style.cursor = 'context-menu';
+        attachRowContextMenu(rowEl, dn, {
+            onTelemetry:    onPrimaryClick   || undefined,
+            onCompare:      onSecondaryClick || undefined,
+            driverAcronym:  info.acronym,
+            driverLastName: info.lastName || info.acronym,
+            driverColour:   info.colour,
+        });
 
         // Tyre indicator
         const compound = currentTyre[dn];

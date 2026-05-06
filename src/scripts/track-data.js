@@ -149,8 +149,21 @@ export async function fetchTowerData(apiFetch, sessionKey, isPractice, isQualify
 export function buildDriverInfoMap(driversData) {
     const map = {};
     driversData.forEach(d => {
+        // full_name e.g. "Max VERSTAPPEN", broadcast_name e.g. "VERSTAPPEN"
+        const broadcastName = d.broadcast_name || null;
+        const fullName      = d.full_name      || null;
+        let lastName = broadcastName || null;
+        if (!lastName && fullName) {
+            const parts = fullName.trim().split(/\s+/);
+            lastName = parts[parts.length - 1];
+        }
+        if (lastName) {
+            lastName = lastName.charAt(0).toUpperCase() + lastName.slice(1).toLowerCase();
+        }
+
         map[d.driver_number] = {
             acronym:     d.name_acronym || ('#' + d.driver_number),
+            lastName:    lastName || d.name_acronym || ('#' + d.driver_number),
             colour:      d.team_colour ? '#' + d.team_colour : '#ffffff',
             headshotUrl: d.headshot_url || null,
             teamName:    d.team_name   || null,

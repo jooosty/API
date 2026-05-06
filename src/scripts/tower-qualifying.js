@@ -1,4 +1,5 @@
 import { buildTowerRow } from './tower-base.js';
+import { attachRowContextMenu } from './tower-context-menu.js';
 
 export function updateQualifyingTower(currentSimTime, intervalRows, allLapData, qualPhaseBoundaries, driverInfoMap, onPrimaryClick = null, onSecondaryClick = null) {
     const bestLap = {};
@@ -113,10 +114,14 @@ export function updateQualifyingTower(currentSimTime, intervalRows, allLapData, 
         rowEl.querySelector('span').style.color = showRed ? '#7a2020' : '#666';
         rowEl.querySelectorAll('span')[2].style.color = showRed ? '#e03030' : '#fff';
 
-        rowEl.style.cursor = 'pointer';
-        rowEl.title = 'Left click: telemetry  |  Right click: compare';
-        rowEl.addEventListener('click', () => { if (onPrimaryClick) onPrimaryClick(dn); });
-        rowEl.addEventListener('contextmenu', e => { e.preventDefault(); if (onSecondaryClick) onSecondaryClick(dn); });
+        rowEl.style.cursor = 'context-menu';
+        attachRowContextMenu(rowEl, dn, {
+            onTelemetry:    onPrimaryClick   || undefined,
+            onCompare:      onSecondaryClick || undefined,
+            driverAcronym:  info.acronym,
+            driverLastName: info.lastName || info.acronym,
+            driverColour:   info.colour,
+        });
         intervalRows.appendChild(rowEl);
     });
 }
