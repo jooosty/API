@@ -119,7 +119,7 @@
     import { setupPlayback } from '../scripts/track-playback.js';
     import { setupComparison } from '../scripts/session-comparison.js';
     import { setupTowerResize } from '../scripts/tower-resize.js';
-    import '../scripts/easter-eggs.js';
+    import { setupEasterEggs } from '../scripts/easter-eggs.js';
     import { showPodium, hidePodium } from '../scripts/podium-screen.js';
 
     const scene    = createScene();
@@ -318,6 +318,9 @@
 
         // ── Session comparison ───────────────────────────────
         const comparison = setupComparison(towerData.allLapData, towerData.allStintData, driverInfoMap);
+
+        // ── Easter eggs ──────────────────────────────────────
+        setupEasterEggs(driverInfoMap, driverDots, allDriverLocationData);
 
         currentPlayback = setupPlayback({
             scene, camera, renderer,
