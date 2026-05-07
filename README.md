@@ -310,7 +310,38 @@ Where it suggested an approach, I read through it, understood it, then mostly re
 
 
 
-
+## 6 mei 2026
+ 
+### What did i do
+- Changed interval tower so left click and right click are replaced by a single right-click context menu dropdown on each driver row
+- Context menu shows the driver's full last name as the header (e.g. "Verstappen" instead of "VER")
+- Context menu has two options: Telemetry and Compare, with no emoji icons
+- Menu closes automatically on outside click, Escape key, or page scroll
+- Added the same right-click context menu to the qualifying and practice towers too
+- Added `lastName` field to `driverInfoMap` by reading `broadcast_name` and `full_name` from the OpenF1 API response and title-casing the result
+- Added Doctor Who easter egg: type "who" anywhere on the keyboard to replace all drivers with Doctor Who characters
+- Characters are randomly shuffled each time so the mapping is different every session
+- Replaces each driver's acronym, full name, team colour, and headshot in the towers and context menu
+- Also replaces the Three.js driver dots on the track with the new colours and character portraits
+- Actor characters (The Doctor, Rose Tyler, Amy Pond etc.) fetch their portrait photo from the Wikipedia pageimages API
+- Creature and prop characters (Dalek, Cyberman, Weeping Angel, TARDIS) use hardcoded Wikimedia Commons image URLs since the Wikipedia API picks the wrong images for those
+- Type "who" again to restore all original drivers and colours
+- A TARDIS-blue banner appears on activation saying "DOCTOR WHO — The TARDIS has landed on the grid…" and a red banner on restore saying "REGENERATING… Restoring the timeline"
+- Refactored `easter-eggs.js` to export `setupEasterEggs()` so driver-aware easter eggs can be registered after session data loads, while static triggers like "max" still register immediately on import
+ 
+### How long did it take
+- 1 hour for the right-click context menu system
+- 30 minutes for adding full last names to the driver info map
+- 2 hours for the Doctor Who easter egg (character pool, Wikipedia API fetching, Three.js texture reload, banner)
+- 30 minutes fixing image URLs (wrong MD5 hash paths in the Wikimedia Commons URLs)
+ 
+### What did i learn
+- I learned how to build a singleton context menu that is shared across all tower rows and positions itself within the viewport
+- I learned how to read `broadcast_name` and `full_name` from the OpenF1 API to derive a readable last name for each driver
+- I learned how Wikipedia's `pageimages` API works and why it picks wrong images for concept/creature articles versus people articles
+- I learned how Wikimedia Commons derives its thumb URL paths from an MD5 hash of the filename, and how to compute the correct hash manually
+- I learned how to hot-swap Three.js mesh textures at runtime by disposing old materials and re-loading new ones without rebuilding the scene
+- I learned how to snapshot and restore a JavaScript object map so an easter egg can fully undo itself
 
 
 
